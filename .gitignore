@@ -1,0 +1,13 @@
+# ignore a file type
+*
+
+# exceptions (using !) to the files to ignore
+!*.c
+!*.h
+!makefile
+!.gitignore
+!README.md
+!PSIS-*
+
+# editor directories
+.vscode
