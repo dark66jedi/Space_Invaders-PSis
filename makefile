@@ -4,14 +4,14 @@ CFLAGS = -g
 LIBS = -lncurses -lzmq
 
 # Source files
-SRCS1 = game-server.c remote_char.h message_handler.h
-SRCS2 = astronaut-client.c remote_char.h
-SRCS3 = outer-space-display.c remote_char.h
+SRCS1 = game-server.c remote_char.h message_handler.h aux_global.h
+SRCS2 = astronaut-client.c remote_char.h aux_global.h
+SRCS3 = outer-space-display.c remote_char.h aux_global.h
 
 # Object files
-OBJS1 = game-server.o
-OBJS2 = astronaut-client.o
-OBJS3 = outer-space-display.o
+OBJS1 = game-server.o message_handler.o aux_functions.o
+OBJS2 = astronaut-client.o aux_functions.o
+OBJS3 = outer-space-display.o aux_functions.o
 
 # Executables
 EXE1 = server
@@ -34,17 +34,20 @@ $(EXE3): $(OBJS3)
 	$(CC) $(CFLAGS) -o $(EXE3) $(OBJS3) $(LIBS)
 
 # Rule to compile object files
-game-server.o: game-server.c remote_char.h
+game-server.o: game-server.c remote_char.h aux_global.h message_handler.h
 	$(CC) $(CFLAGS) -c game-server.c
 
-astronaut-client.o: astronaut-client.c remote_char.h 
+astronaut-client.o: astronaut-client.c remote_char.h aux_global.h
 	$(CC) $(CFLAGS) -c astronaut-client.c
 
-outer-space-display.o: outer-space-display.c remote_char.h 
+outer-space-display.o: outer-space-display.c remote_char.h aux_global.h
 	$(CC) $(CFLAGS) -c outer-space-display.c
 
-message_handler.o: message_handler.c message_handler.h 
+message_handler.o: message_handler.c message_handler.h aux_global.h
 	$(CC) $(CFLAGS) -c message_handler.c
+
+aux_functions.o: aux_functions.c aux_global.h 
+	$(CC) $(CFLAGS) -c aux_functions.c
 
 # Clean up build files
 clean:

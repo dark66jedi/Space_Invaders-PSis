@@ -1,16 +1,20 @@
+#ifndef AUX_H
+#define AUX_H
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+#define WINDOW_SIZE 20
+
 typedef struct client_info
 {
-    int ch;
+    char ch;
     int pos_x, pos_y;
-    unsigned int client_id;
-    struct client_info* next;
+    int movement; // if 0 vertical, if 1 horizontal
+    char *client_id;
 } client_info;
 
-struct client_info* createNode(struct client_info** head, char ch, int pos_x, int pos_y, int client_id);
-void insertAtBeginning(struct client_info** head, char ch, int pos_x, int pos_y, int client_id);
-struct client_info* searchNode(struct client_info* head, int target);
-void printList(struct client_info* head);
+void generate_client_id(char* client_id);
+
+#endif

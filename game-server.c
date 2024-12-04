@@ -57,7 +57,10 @@ void serialize_window(WINDOW *win, char *buffer) {
 int main()
 {	
     //STEP 2
-    client_info *head = NULL;
+    client_info *client_data[8]; // Array of pointers to client_info
+    for (int i = 0; i < 8; i++) {
+        client_data[i] = NULL; // Initialize pointers to NULL
+    }
     int n_players = 0;
 
     remote_char_t m;
@@ -72,26 +75,24 @@ int main()
     void *socket_display = zmq_socket(context, ZMQ_REQ);
     zmq_connect(socket_display, "tcp://localhost:5556"); // Connect to display
 
-	initscr();		    	
-	cbreak();				
-    keypad(stdscr, TRUE);   
-	noecho();			    
+	// initscr();		    	
+	// cbreak();				
+    // keypad(stdscr, TRUE);   
+	// noecho();			    
 
     /* creates a window and draws a border */
-    WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
-    box(my_win, 0 , 0);	
-	wrefresh(my_win);
+    // WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
+    // box(my_win, 0 , 0);	
+	// wrefresh(my_win);
 
     int ch;
     int pos_x;
     int pos_y;
-
+    int client_idx;
     direction_t  direction;
     while (1)
     {
         zmq_recv(socket_client, &m, sizeof(m), 0);
-        const char *reply = "Reply from server";
-        zmq_send(socket_client, reply, strlen(reply)+1, 0);
 
         if(m.msg_type == 0){
             ch = m.ch;
@@ -103,43 +104,50 @@ int main()
             // client_data[n_players].pos_x = pos_x;
             // client_data[n_players].pos_y = pos_y;
             n_players++;
-            handle_astronaut_connect(&*head, pos_x, pos_y);
+            client_idx = handle_astronaut_connect(client_data, &n_players);
+            if(client_idx == -1){
+                const char *reply = "Maximum number of players reached";
+                zmq_send(socket_client, reply, strlen(reply)+1, 0);
+            }else{
+                printf("%c\n%s\n%d\n",client_data[client_idx]->ch,client_data[client_idx]->client_id, client_idx);
+                zmq_send(socket_client, client_data[client_idx]->client_id, strlen(client_data[client_idx]->client_id)+1, 0);
+            }
         }
         if(m.msg_type == 1){
             //STEP 4
-            int ch_pos = find_ch_info(head, n_players, m.ch);
-            if(ch_pos != -1){
-                pos_x = head[ch_pos].pos_x;
-                pos_y = head[ch_pos].pos_y;
-                ch = head[ch_pos].ch;
-                /*deletes old place */
-                wmove(my_win, pos_x, pos_y);
-                waddch(my_win,' ');
+            // int ch_pos = find_ch_info(head, n_players, m.ch);
+            // if(ch_pos != -1){
+            //     pos_x = head[ch_pos].pos_x;
+            //     pos_y = head[ch_pos].pos_y;
+            //     ch = head[ch_pos].ch;
+            //     /*deletes old place */
+            //     wmove(my_win, pos_x, pos_y);
+            //     waddch(my_win,' ');
 
-                /* claculates new direction */
-                direction = m.direction;
+            //     /* claculates new direction */
+            //     direction = m.direction;
 
-                /* claculates new mark position */
-                new_position(&pos_x, &pos_y, direction);
-                head[ch_pos].pos_x = pos_x;
-                head[ch_pos].pos_y = pos_y;
+            //     /* claculates new mark position */
+            //     new_position(&pos_x, &pos_y, direction);
+            //     head[ch_pos].pos_x = pos_x;
+            //     head[ch_pos].pos_y = pos_y;
 
-            }        
+            // }        
         }
         /* draw mark on new position */
-        wmove(my_win, pos_x, pos_y);
-        waddch(my_win,ch| A_BOLD);
+        // wmove(my_win, pos_x, pos_y);
+        // waddch(my_win,ch| A_BOLD);
 
         // send to display
-        char buffer[WINDOW_SIZE * WINDOW_SIZE];
-        serialize_window(my_win, buffer);
-        zmq_send(socket_display, &buffer, sizeof(buffer), 0);
-        char response[256];
-        zmq_recv(socket_display, response, 255, 0);
+        // char buffer[WINDOW_SIZE * WINDOW_SIZE];
+        // serialize_window(my_win, buffer);
+        // zmq_send(socket_display, &buffer, sizeof(buffer), 0);
+        // char response[256];
+        // zmq_recv(socket_display, response, 255, 0);
 
-        wrefresh(my_win);			
+        // wrefresh(my_win);
     }
-  	endwin();			/* End curses mode		  */
+  	// endwin();			/* End curses mode		  */
     zmq_close(socket_client);
     zmq_close(socket_display);
     zmq_ctx_destroy(context);

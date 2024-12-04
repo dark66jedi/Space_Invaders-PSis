@@ -1,8 +1,14 @@
+#ifndef MESSAGE_HANDLER_H
+#define MESSAGE_HANDLER_H
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "aux_global.h"
 
-void handle_astronaut_connect(struct client_info** head, int pos_x, int pos_y);
-void handle_astronaut_disconnect();
+int handle_astronaut_connect(client_info* client_data[], int *n_players);
+void handle_astronaut_disconnect(client_info *client_data[], int *n_players, char* client_id);
 void handle_astronaut_movement();
 void handle_astronaut_zap();
+
+#endif
