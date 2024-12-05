@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "message_handler.h"
 #include "aux_global.h"
 
@@ -48,19 +49,18 @@ int handle_astronaut_connect(client_info *client_data[], int *n_players) {
 }
 
 
-void handle_astronaut_disconnect(client_info *client_data[], int *n_players, char* client_id){
+int handle_astronaut_disconnect(client_info *client_data[], int *n_players, char* client_id){
     for (int i = 0; i < 8; i++)
     {
         if (!strcmp(client_data[i]->client_id,client_id)){
-            client_data[i]->ch='\0';
-            client_data[i]->client_id='\0';
-            client_data[i]->pos_x=-1;
-            client_data[i]->pos_y=-1;
-            client_data[i]->movement=-1;
+            free(client_data[i]->client_id);
+            free(client_data[i]);
+            client_data[i] = NULL;
             (*n_players)--;
+            return 1;
         }
     }
-    return;
+    return -1;
 }
 
 void handle_astronaut_movement(){

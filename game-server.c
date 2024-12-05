@@ -89,21 +89,25 @@ int main()
     int pos_x;
     int pos_y;
     int client_idx;
+    char *reply;
     direction_t  direction;
     while (1)
     {
         zmq_recv(socket_client, &m, sizeof(m), 0);
 
+        // astronaut_disconnect
+        if (m.msg_type == -1){
+            client_idx = handle_astronaut_connect(client_data, &n_players);
+            if(client_idx == -1){
+                strcpy(reply, "Client not disconnected");
+            }else if(client_idx == 1){
+                strcpy(reply, "Client disconnected");
+            }
+            zmq_send(socket_client, reply, strlen(reply)+1, 0);
+        }
+        
+        // astronaut_connect
         if(m.msg_type == 0){
-            ch = m.ch;
-            pos_x = WINDOW_SIZE/2;
-            pos_y = WINDOW_SIZE/2;
-
-            //STEP 3
-            // client_data[n_players].ch = ch;
-            // client_data[n_players].pos_x = pos_x;
-            // client_data[n_players].pos_y = pos_y;
-            n_players++;
             client_idx = handle_astronaut_connect(client_data, &n_players);
             if(client_idx == -1){
                 const char *reply = "Maximum number of players reached";
