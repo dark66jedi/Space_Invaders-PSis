@@ -25,17 +25,15 @@ int main()
   zmq_send(socket, &m, sizeof(m), 0);
   char buffer[256];
   zmq_recv(socket, buffer, 255, 0);
-  printf("%s", buffer);
+  printf("%s\n", buffer);
   if (!strcmp(buffer, "Maximum number of players reached"))
     return -1;
-  else{
+  else if (!strcmp(buffer, "An error occurred"))
+    return -1;
+  else
+  {
     strcpy(m.client_id, buffer);
-    printf("%s", m.client_id);
   }
-
-  zmq_close(socket);
-  zmq_ctx_destroy(context);
-  return 0;
 
   initscr();            /* Start curses mode 		*/
   cbreak();             /* Line buffering disabled	*/
@@ -55,6 +53,11 @@ int main()
     n++;
     switch (key)
     {
+    case 'q':
+    case 'Q':
+      mvprintw(0, 0, "%d q/Q arrow is pressed", n);
+      m.msg_type = -1;
+      break;
     case KEY_LEFT:
       mvprintw(0, 0, "%d Left arrow is pressed", n);
       m.direction = LEFT;
@@ -83,11 +86,16 @@ int main()
     {
       zmq_send(socket, &m, sizeof(remote_char_t), 0);
       zmq_recv(socket, buffer, 255, 0);
+      if (!strcmp(buffer, "Client disconnected")) break;
+      else if (!strcmp(buffer, "Client not disconnected")){
+        printf("%s. Try again",buffer);
+      }
     }
     refresh(); /* Print it on to the real screen */
   } while (key != 27);
 
   endwin(); /* End curses mode		  */
+  printf("%s\n", buffer);
   // Clean up
   zmq_close(socket);
   zmq_ctx_destroy(context);

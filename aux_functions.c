@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "aux_global.h"
 
 void generate_client_id(char* client_id) {
@@ -14,3 +15,28 @@ void generate_client_id(char* client_id) {
     client_id[length] = '\0';
 }
 
+int init_client_array(client_info *client_data[]){
+    for (int i = 0; i < 8; i++)
+    {
+        client_data[i] = malloc(sizeof(client_info));
+        if (client_data[i] == NULL) {
+            perror("Failed to allocate memory for client_data[i]");
+            return -1; // Error
+        }
+        
+        client_data[i]->client_id = malloc(16); // Adjust size as necessary
+        if (client_data[i]->client_id == NULL) {
+            perror("Failed to allocate memory for client_id");
+            free(client_data[i]); // Free allocated memory
+            client_data[i] = NULL;
+            return -1; // Error
+        }
+
+        client_data[i]->ch = '\0';
+        strcpy(client_data[i]->client_id,"----------------");
+        client_data[i]->movement = -1;
+        client_data[i]->pos_x = -1;
+        client_data[i]->pos_y = -1;
+    }
+    return 1;
+}

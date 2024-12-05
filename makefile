@@ -51,7 +51,7 @@ aux_functions.o: aux_functions.c aux_global.h
 
 # Clean up build files
 clean:
-	rm -f *.o $(EXE1) $(EXE2)
+	rm -f *.o $(EXE1) $(EXE2) $(EXE3)
 
 # Phony targets
-.PHONY: all clean
+.PHONY: all valgrind clean

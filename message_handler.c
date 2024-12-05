@@ -7,23 +7,7 @@
 
 int handle_astronaut_connect(client_info *client_data[], int *n_players) {
     for (int i = 0; i < 8; i++) {
-        if (client_data[i] == NULL) {
-            // Allocate memory for a new client_info structure
-            client_data[i] = malloc(sizeof(client_info));
-            if (client_data[i] == NULL) {
-                perror("Failed to allocate memory for client_data[i]");
-                return -1; // Error
-            }
-
-            // Initialize the new client_info
-            client_data[i]->client_id = malloc(16); // Adjust size as necessary
-            if (client_data[i]->client_id == NULL) {
-                perror("Failed to allocate memory for client_id");
-                free(client_data[i]); // Free allocated memory
-                client_data[i] = NULL;
-                return -1; // Error
-            }
-
+        if (!strcmp(client_data[i]->client_id,"----------------")) {
             generate_client_id(client_data[i]->client_id); // Assign a unique client_id
             client_data[i]->ch = 65 + i; // Assign a character ('A' + i)
 
@@ -53,9 +37,12 @@ int handle_astronaut_disconnect(client_info *client_data[], int *n_players, char
     for (int i = 0; i < 8; i++)
     {
         if (!strcmp(client_data[i]->client_id,client_id)){
-            free(client_data[i]->client_id);
-            free(client_data[i]);
-            client_data[i] = NULL;
+            printf("Client about to disconnect: %c\n", client_data[i]->ch);
+            client_data[i]->ch = '\0';
+            strcpy(client_data[i]->client_id,"----------------");
+            client_data[i]->movement = -1;
+            client_data[i]->pos_x = -1;
+            client_data[i]->pos_y = -1;
             (*n_players)--;
             return 1;
         }

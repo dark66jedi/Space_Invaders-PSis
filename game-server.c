@@ -58,9 +58,13 @@ int main()
 {	
     //STEP 2
     client_info *client_data[8]; // Array of pointers to client_info
-    for (int i = 0; i < 8; i++) {
-        client_data[i] = NULL; // Initialize pointers to NULL
+    int check_init;
+    check_init = init_client_array(client_data);
+    if (check_init == -1){
+        perror("Couldnt initialize client array");
+        exit(-1);
     }
+
     int n_players = 0;
 
     remote_char_t m;
@@ -97,24 +101,29 @@ int main()
 
         // astronaut_disconnect
         if (m.msg_type == -1){
-            client_idx = handle_astronaut_connect(client_data, &n_players);
+            printf("\nNumber of players before disconnect: %d\n", n_players);
+            client_idx = handle_astronaut_disconnect(client_data, &n_players, m.client_id);
             if(client_idx == -1){
                 strcpy(reply, "Client not disconnected");
             }else if(client_idx == 1){
                 strcpy(reply, "Client disconnected");
             }
             zmq_send(socket_client, reply, strlen(reply)+1, 0);
+            printf("Number of players after disconnect: %d\n", n_players);
         }
         
         // astronaut_connect
         if(m.msg_type == 0){
             client_idx = handle_astronaut_connect(client_data, &n_players);
             if(client_idx == -1){
-                const char *reply = "Maximum number of players reached";
+                strcpy(reply, "Maximum number of players reached");
                 zmq_send(socket_client, reply, strlen(reply)+1, 0);
-            }else{
-                printf("%c\n%s\n%d\n",client_data[client_idx]->ch,client_data[client_idx]->client_id, client_idx);
+            }else if(client_idx>=0 && client_idx<=7){
+                printf("\nCHAR: %c\tCLIENT_ID: %s\tIDX: %d\t\n",client_data[client_idx]->ch,client_data[client_idx]->client_id, client_idx);
                 zmq_send(socket_client, client_data[client_idx]->client_id, strlen(client_data[client_idx]->client_id)+1, 0);
+            }else{
+                strcpy(reply, "An error occurred");
+                zmq_send(socket_client, reply, strlen(reply)+1, 0);
             }
         }
         if(m.msg_type == 1){

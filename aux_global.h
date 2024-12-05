@@ -16,5 +16,6 @@ typedef struct client_info
 } client_info;
 
 void generate_client_id(char* client_id);
+int init_client_array(client_info *client_data[]);
 
 #endif
