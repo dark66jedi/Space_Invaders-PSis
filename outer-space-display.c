@@ -25,8 +25,9 @@ int main()
     void *context = zmq_ctx_new();
 
     // Create a REP socket
-    void *socket = zmq_socket(context, ZMQ_REP);
-    zmq_bind(socket, "tcp://*:5556"); // Bind to TCP port 5556
+    void *socket = zmq_socket(context, ZMQ_SUB);
+    zmq_bind(socket, "tcp://localhost:5556"); // Bind to TCP port 5556
+    zmq_setsockopt(socket, ZMQ_SUBSCRIBE, "", 0);
 
 	initscr();		    	
 	cbreak();				
@@ -42,10 +43,7 @@ int main()
         zmq_recv(socket, &buffer, sizeof(buffer), 0);
         deserialize_window(my_win, buffer);
         box(my_win, 0 , 0);
-        wrefresh(my_win);
-
-        const char *reply = "Reply from server";
-        zmq_send(socket, reply, strlen(reply)+1, 0);			
+        wrefresh(my_win);		
     }
   	endwin();
     zmq_close(socket);

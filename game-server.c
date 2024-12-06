@@ -76,40 +76,46 @@ int main()
     void *socket_client = zmq_socket(context, ZMQ_REP);
     zmq_bind(socket_client, "tcp://*:5555"); // Bind to TCP port 5555
 
-    void *socket_display = zmq_socket(context, ZMQ_REQ);
+    void *socket_display = zmq_socket(context, ZMQ_PUB);
     zmq_connect(socket_display, "tcp://localhost:5556"); // Connect to display
 
-	// initscr();		    	
-	// cbreak();				
-    // keypad(stdscr, TRUE);   
-	// noecho();			    
+	initscr();
+	cbreak();
+    keypad(stdscr, TRUE);
+	noecho();
 
     /* creates a window and draws a border */
-    // WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
-    // box(my_win, 0 , 0);	
-	// wrefresh(my_win);
+    WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
+    box(my_win, 0 , 0);	
+	wrefresh(my_win);
 
-    int ch;
-    int pos_x;
-    int pos_y;
     int client_idx;
-    char *reply;
+    char reply[256];
     direction_t  direction;
     while (1)
     {
+        // send to display
+        char buffer[WINDOW_SIZE * WINDOW_SIZE];
+        serialize_window(my_win, buffer);
+        zmq_send(socket_display, &buffer, sizeof(buffer), 0);
+
         zmq_recv(socket_client, &m, sizeof(m), 0);
 
         // astronaut_disconnect
         if (m.msg_type == -1){
-            printf("\nNumber of players before disconnect: %d\n", n_players);
-            client_idx = handle_astronaut_disconnect(client_data, &n_players, m.client_id);
+            int delete_pos_x, delete_pos_y;
+            // printf("\nNumber of players before disconnect: %d\n", n_players);
+            client_idx = handle_astronaut_disconnect(client_data, &n_players, m.client_id, &delete_pos_x, &delete_pos_y);
+            
             if(client_idx == -1){
                 strcpy(reply, "Client not disconnected");
             }else if(client_idx == 1){
                 strcpy(reply, "Client disconnected");
+                wmove(my_win, delete_pos_x, delete_pos_y);
+                waddch(my_win,' ');
             }
             zmq_send(socket_client, reply, strlen(reply)+1, 0);
-            printf("Number of players after disconnect: %d\n", n_players);
+            // printf("Number of players after disconnect: %d\n", n_players);
         }
         
         // astronaut_connect
@@ -119,8 +125,10 @@ int main()
                 strcpy(reply, "Maximum number of players reached");
                 zmq_send(socket_client, reply, strlen(reply)+1, 0);
             }else if(client_idx>=0 && client_idx<=7){
-                printf("\nCHAR: %c\tCLIENT_ID: %s\tIDX: %d\t\n",client_data[client_idx]->ch,client_data[client_idx]->client_id, client_idx);
+                // printf("\nCHAR: %c\tCLIENT_ID: %s\tIDX: %d\t\n",client_data[client_idx]->ch,client_data[client_idx]->client_id, client_idx);
                 zmq_send(socket_client, client_data[client_idx]->client_id, strlen(client_data[client_idx]->client_id)+1, 0);
+                wmove(my_win, client_data[client_idx]->pos_x, client_data[client_idx]->pos_y);
+                waddch(my_win,client_data[client_idx]->ch| A_BOLD);
             }else{
                 strcpy(reply, "An error occurred");
                 zmq_send(socket_client, reply, strlen(reply)+1, 0);
@@ -148,17 +156,9 @@ int main()
             // }        
         }
         /* draw mark on new position */
-        // wmove(my_win, pos_x, pos_y);
-        // waddch(my_win,ch| A_BOLD);
+        
 
-        // send to display
-        // char buffer[WINDOW_SIZE * WINDOW_SIZE];
-        // serialize_window(my_win, buffer);
-        // zmq_send(socket_display, &buffer, sizeof(buffer), 0);
-        // char response[256];
-        // zmq_recv(socket_display, response, 255, 0);
-
-        // wrefresh(my_win);
+        wrefresh(my_win);
     }
   	// endwin();			/* End curses mode		  */
     zmq_close(socket_client);

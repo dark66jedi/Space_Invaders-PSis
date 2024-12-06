@@ -33,16 +33,20 @@ int handle_astronaut_connect(client_info *client_data[], int *n_players) {
 }
 
 
-int handle_astronaut_disconnect(client_info *client_data[], int *n_players, char* client_id){
+int handle_astronaut_disconnect(client_info *client_data[], int *n_players, char* client_id, int *pos_x, int *pos_y){
     for (int i = 0; i < 8; i++)
     {
         if (!strcmp(client_data[i]->client_id,client_id)){
-            printf("Client about to disconnect: %c\n", client_data[i]->ch);
+            // printf("Client about to disconnect: %c\n", client_data[i]->ch);
             client_data[i]->ch = '\0';
             strcpy(client_data[i]->client_id,"----------------");
             client_data[i]->movement = -1;
+
+            (*pos_x) = client_data[i]->pos_x;
+            (*pos_y) = client_data[i]->pos_y;
             client_data[i]->pos_x = -1;
             client_data[i]->pos_y = -1;
+
             (*n_players)--;
             return 1;
         }
