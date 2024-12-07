@@ -12,14 +12,48 @@ int handle_astronaut_connect(client_info *client_data[], int *n_players) {
             client_data[i]->ch = 65 + i; // Assign a character ('A' + i)
 
             // Set initial positions based on the index
-            if (i % 2 == 0) {
+            switch (i)
+            {
+            case 0:
                 client_data[i]->pos_y = WINDOW_SIZE / 2;
-                client_data[i]->pos_x = (i < 4) ? 1 : 2;
-                client_data[i]->movement=0;
-            } else {
+                client_data[i]->pos_x = 1;
+                client_data[i]->movement = 1;
+                break;
+            case 1:
+                client_data[i]->pos_y = 1;
                 client_data[i]->pos_x = WINDOW_SIZE / 2;
-                client_data[i]->pos_y = (i < 4) ? 1 : 2;
-                client_data[i]->movement=1;
+                client_data[i]->movement = 0;
+                break;
+            case 2:
+                client_data[i]->pos_y = WINDOW_SIZE / 2;
+                client_data[i]->pos_x = WINDOW_SIZE - 2;
+                client_data[i]->movement = 1;
+                break;
+            case 3:
+                client_data[i]->pos_y = WINDOW_SIZE - 2;
+                client_data[i]->pos_x = WINDOW_SIZE / 2;
+                client_data[i]->movement = 0;
+                break;
+            case 4:
+                client_data[i]->pos_y = WINDOW_SIZE / 2;
+                client_data[i]->pos_x = 2;
+                client_data[i]->movement = 1;
+                break;
+            case 5:
+                client_data[i]->pos_y = 2;
+                client_data[i]->pos_x = WINDOW_SIZE / 2;
+                client_data[i]->movement = 0;
+                break;
+            case 6:
+                client_data[i]->pos_y = WINDOW_SIZE / 2;
+                client_data[i]->pos_x = WINDOW_SIZE - 3;
+                client_data[i]->movement = 1;
+                break;
+            case 7:
+                client_data[i]->pos_y = WINDOW_SIZE - 3;
+                client_data[i]->pos_x = WINDOW_SIZE / 2;
+                client_data[i]->movement = 0;
+                break;
             }
 
             (*n_players)++; // Increment player count
@@ -54,7 +88,37 @@ int handle_astronaut_disconnect(client_info *client_data[], int *n_players, char
     return -1;
 }
 
-void handle_astronaut_movement(){
+int handle_astronaut_movement(client_info *client_data[], char *client_id, direction_t direction, int *pos_x, int *pos_y){
+    for (int i = 0; i < 8; i++)
+    {
+        if (!strcmp(client_data[i]->client_id,client_id)){
+            (*pos_x) = client_data[i]->pos_x;
+            (*pos_y) = client_data[i]->pos_y;
+
+            int new_pos_x = client_data[i]->pos_x;
+            int new_pos_y = client_data[i]->pos_y;
+
+            int response;
+            response = new_position(&new_pos_x, &new_pos_y, direction, client_data[i]->movement);
+            if(response == -1){
+                // error ocurred: didnt update position
+                return -1;
+            }
+            else if(response == -2){
+                // invalid move: didnt update position
+                return -2;
+            }
+            else if(response == 1){
+                // player move: update position
+                client_data[i]->pos_x = new_pos_x;
+                client_data[i]->pos_y = new_pos_y;
+
+                return i;
+            }
+            else return -1;
+        }
+    }
+    return -1;
     
 }
 

@@ -1,5 +1,5 @@
 #include <ncurses.h>
-#include "remote_char.h"
+#include "aux_global.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>

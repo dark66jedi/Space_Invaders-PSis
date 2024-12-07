@@ -12,7 +12,6 @@ void generate_client_id(char* client_id) {
     for (int i = 0; i < length; i++) {
         client_id[i] = charset[rand() % charsetSize];
     }
-    client_id[length] = '\0';
 }
 
 int init_client_array(client_info *client_data[]){
@@ -39,4 +38,45 @@ int init_client_array(client_info *client_data[]){
         client_data[i]->pos_y = -1;
     }
     return 1;
+}
+
+int new_position(int* x, int *y, direction_t direction, int allowed_mov){
+    if (allowed_mov == 0)
+    {
+        if (direction == UP)
+        {
+            (*x) --;
+            if(*x ==0)
+                *x = 2;
+            return 1;
+        }
+        else if(direction == DOWN){
+            (*x) ++;
+            if(*x ==WINDOW_SIZE-1)
+                *x = WINDOW_SIZE-3;
+            return 1;
+        }
+        else{
+            return -2;
+        }
+    }
+    else if (allowed_mov == 1){
+        if (direction == LEFT)
+        {
+            (*y) --;
+            if(*y ==0)
+                *y = 2;
+            return 1;
+        }
+        else if(direction == RIGHT){
+            (*y) ++;
+            if(*y ==WINDOW_SIZE-1)
+                *y = WINDOW_SIZE-3;
+            return 1;
+        }
+        else{
+            return -2;
+        }
+    }
+    return -1;
 }

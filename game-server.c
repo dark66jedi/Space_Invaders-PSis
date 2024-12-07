@@ -1,5 +1,4 @@
 #include <ncurses.h>
-#include "remote_char.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -11,39 +10,6 @@
 #include "aux_global.h"
 
 #define WINDOW_SIZE 20
-
-
-direction_t random_direction(){
-    return  random()%4;
-
-}
-void new_position(int* x, int *y, direction_t direction){
-    switch (direction)
-    {
-    case UP:
-        (*x) --;
-        if(*x ==0)
-            *x = 2;
-        break;
-    case DOWN:
-        (*x) ++;
-        if(*x ==WINDOW_SIZE-1)
-            *x = WINDOW_SIZE-3;
-        break;
-    case LEFT:
-        (*y) --;
-        if(*y ==0)
-            *y = 2;
-        break;
-    case RIGHT:
-        (*y) ++;
-        if(*y ==WINDOW_SIZE-1)
-            *y = WINDOW_SIZE-3;
-        break;
-    default:
-        break;
-    }
-}
 
 void serialize_window(WINDOW *win, char *buffer) {
     int idx = 0;
@@ -67,7 +33,7 @@ int main()
 
     int n_players = 0;
 
-    remote_char_t m;
+    remote_char_t msg;
 
     // Create a context
     void *context = zmq_ctx_new();
@@ -91,7 +57,7 @@ int main()
 
     int client_idx;
     char reply[256];
-    direction_t  direction;
+    int delete_pos_x, delete_pos_y;
     while (1)
     {
         // send to display
@@ -99,13 +65,17 @@ int main()
         serialize_window(my_win, buffer);
         zmq_send(socket_display, &buffer, sizeof(buffer), 0);
 
-        zmq_recv(socket_client, &m, sizeof(m), 0);
+        zmq_recv(socket_client, &msg, sizeof(msg), 0);
+        // printf("Received msg_type: %d\n", msg.msg_type);
+        // printf("Received direction: %d\n", msg.direction);
+        // printf("Received client_id: %s\n", msg.client_id);
 
         // astronaut_disconnect
-        if (m.msg_type == -1){
-            int delete_pos_x, delete_pos_y;
-            // printf("\nNumber of players before disconnect: %d\n", n_players);
-            client_idx = handle_astronaut_disconnect(client_data, &n_players, m.client_id, &delete_pos_x, &delete_pos_y);
+        if (msg.msg_type == -1){
+            if(strlen(msg.client_id) > 16)
+                msg.client_id[16] = '\0';
+            
+            client_idx = handle_astronaut_disconnect(client_data, &n_players, msg.client_id, &delete_pos_x, &delete_pos_y);
             
             if(client_idx == -1){
                 strcpy(reply, "Client not disconnected");
@@ -119,7 +89,7 @@ int main()
         }
         
         // astronaut_connect
-        if(m.msg_type == 0){
+        if(msg.msg_type == 0){
             client_idx = handle_astronaut_connect(client_data, &n_players);
             if(client_idx == -1){
                 strcpy(reply, "Maximum number of players reached");
@@ -134,30 +104,45 @@ int main()
                 zmq_send(socket_client, reply, strlen(reply)+1, 0);
             }
         }
-        if(m.msg_type == 1){
-            //STEP 4
-            // int ch_pos = find_ch_info(head, n_players, m.ch);
-            // if(ch_pos != -1){
-            //     pos_x = head[ch_pos].pos_x;
-            //     pos_y = head[ch_pos].pos_y;
-            //     ch = head[ch_pos].ch;
-            //     /*deletes old place */
-            //     wmove(my_win, pos_x, pos_y);
-            //     waddch(my_win,' ');
+        if(msg.msg_type == 1){
+            direction_t direction = msg.direction;
+            if(strlen(msg.client_id) > 16)
+                msg.client_id[16] = '\0';
 
-            //     /* claculates new direction */
-            //     direction = m.direction;
+            // mvprintw(2, 25, "msg_type number %d", m.msg_type);
+            
+            client_idx = handle_astronaut_movement(client_data, msg.client_id, direction, &delete_pos_x, &delete_pos_y);
 
-            //     /* claculates new mark position */
-            //     new_position(&pos_x, &pos_y, direction);
-            //     head[ch_pos].pos_x = pos_x;
-            //     head[ch_pos].pos_y = pos_y;
+            if(client_idx == -1){
+                // error ocurred: didnt update position
+                strcpy(reply, "An error ocurred: position not updated");
+                zmq_send(socket_client, reply, strlen(reply)+1, 0);
+            }
+            else if(client_idx == -2){
+                // invalid move: didnt update position
+                strcpy(reply, "Invalid move: position not updated");
+                zmq_send(socket_client, reply, strlen(reply)+1, 0);
+            }
+            else if(client_idx>=0 && client_idx<=7){
+                // player move: update position
+                strcpy(reply, "Player moved: position updated");
+                zmq_send(socket_client, reply, strlen(reply)+1, 0);
 
-            // }        
+                wmove(my_win, delete_pos_x, delete_pos_y);
+                waddch(my_win,' ');
+
+                wmove(my_win, client_data[client_idx]->pos_x, client_data[client_idx]->pos_y);
+                waddch(my_win,client_data[client_idx]->ch| A_BOLD);
+
+            }
+            else{
+                // error ocurred: didnt update position
+                strcpy(reply, "An error ocurred: position not updated");
+                zmq_send(socket_client, reply, strlen(reply)+1, 0);
+            }
         }
         /* draw mark on new position */
         
-
         wrefresh(my_win);
     }
   	// endwin();			/* End curses mode		  */

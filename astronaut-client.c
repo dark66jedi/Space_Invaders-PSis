@@ -1,5 +1,5 @@
 #include <ncurses.h>
-#include "remote_char.h"
+#include "aux_global.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -84,6 +84,8 @@ int main()
     //  send the movement message
     if (key != 'x')
     {
+      mvprintw(1, 0, "Direction number %d", m.direction);
+      mvprintw(2, 0, "msg_type number %d", m.msg_type);
       zmq_send(socket, &m, sizeof(remote_char_t), 0);
       zmq_recv(socket, buffer, 255, 0);
       if (!strcmp(buffer, "Client disconnected")) break;

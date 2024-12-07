@@ -7,6 +7,15 @@
 
 #define WINDOW_SIZE 20
 
+typedef enum direction_t {UP, DOWN, LEFT, RIGHT} direction_t;
+
+typedef struct remote_char_t
+{   
+    int msg_type; /* 0 join   1 - move */
+    char client_id[16]; 
+    direction_t direction ;
+}remote_char_t;
+
 typedef struct client_info
 {
     char ch;
@@ -17,5 +26,6 @@ typedef struct client_info
 
 void generate_client_id(char* client_id);
 int init_client_array(client_info *client_data[]);
+int new_position(int* x, int *y, direction_t direction, int allowed_mov);
 
 #endif
