@@ -11,96 +11,106 @@
 
 int main()
 {
-  // Create a context
-  void *context = zmq_ctx_new();
+	// Create a context
+	void *context = zmq_ctx_new();
 
-  // Create a REQ socket
-  void *socket = zmq_socket(context, ZMQ_REQ);
-  zmq_connect(socket, "tcp://localhost:5555"); // Connect to server
+	// Create a REQ socket
+	void *socket = zmq_socket(context, ZMQ_REQ);
+	zmq_connect(socket, "tcp://localhost:5555"); // Connect to server
 
-  // TODO_6
-  // send connection message
-  remote_char_t m;
-  m.msg_type = 0;
-  zmq_send(socket, &m, sizeof(m), 0);
-  char buffer[256];
-  zmq_recv(socket, buffer, 255, 0);
-  printf("%s\n", buffer);
-  if (!strcmp(buffer, "Maximum number of players reached"))
-    return -1;
-  else if (!strcmp(buffer, "An error occurred"))
-    return -1;
-  else
-  {
-    strcpy(m.client_id, buffer);
-  }
+	// TODO_6
+	// send connection message
+	remote_char_t m;
+	m.msg_type = 0;
+	zmq_send(socket, &m, sizeof(m), 0);
+	char buffer[256];
+	zmq_recv(socket, buffer, 255, 0);
+	printf("%s\n", buffer);
 
-  initscr();            /* Start curses mode 		*/
-  cbreak();             /* Line buffering disabled	*/
-  keypad(stdscr, TRUE); /* We get F1, F2 etc..		*/
-  noecho();             /* Don't echo() while we do getch */
+	// TODO Adicionar disconnects 
+	if (!strcmp(buffer, "Maximum number of players reached")){
+		printf("%s /n", buffer);
+		zmq_close(socket);
+		zmq_ctx_destroy(context);
+		return -1;
+}
+	else if (!strcmp(buffer, "An error occurred")){
+		printf("%s /n", buffer);
+		zmq_close(socket);
+		zmq_ctx_destroy(context);
+		return -1;
+	}
+	else
+	{
+		strcpy(m.client_id, buffer);
+	}
 
-  int n = 0;
+	initscr();            /* Start curses mode 		*/
+	cbreak();             /* Line buffering disabled	*/
+	keypad(stdscr, TRUE); /* We get F1, F2 etc..		*/
+	noecho();             /* Don't echo() while we do getch */
 
-  // TODO_9
-  //  prepare the movement message
-  m.msg_type = 1;
+	int n = 0;
 
-  int key;
-  do
-  {
-    key = getch();
-    n++;
-    switch (key)
-    {
-    case 'q':
-    case 'Q':
-      mvprintw(0, 0, "%d q/Q arrow is pressed", n);
-      m.msg_type = -1;
-      break;
-    case KEY_LEFT:
-      mvprintw(0, 0, "%d Left arrow is pressed", n);
-      m.direction = LEFT;
-      break;
-    case KEY_RIGHT:
-      mvprintw(0, 0, "%d Right arrow is pressed", n);
-      m.direction = RIGHT;
-      break;
-    case KEY_DOWN:
-      mvprintw(0, 0, "%d Down arrow is pressed", n);
-      m.direction = DOWN;
-      break;
-    case KEY_UP:
-      mvprintw(0, 0, "%d :Up arrow is pressed", n);
-      m.direction = UP;
-      break;
+	// TODO_9
+	//  prepare the movement message
+	m.msg_type = 1;
 
-    default:
-      key = 'x';
-      break;
-    }
+	int key;
+	do
+	{
+		key = getch();
+		n++;
+		switch (key)
+		{
+			case 'q':
+			case 'Q':
+				mvprintw(0, 0, "%d q/Q arrow is pressed", n);
+				m.msg_type = -1;
+				break;
+			case KEY_LEFT:
+				mvprintw(0, 0, "%d Left arrow is pressed", n);
+				m.direction = LEFT;
+				break;
+			case KEY_RIGHT:
+				mvprintw(0, 0, "%d Right arrow is pressed", n);
+				m.direction = RIGHT;
+				break;
+			case KEY_DOWN:
+				mvprintw(0, 0, "%d Down arrow is pressed", n);
+				m.direction = DOWN;
+				break;
+			case KEY_UP:
+				mvprintw(0, 0, "%d :Up arrow is pressed", n);
+				m.direction = UP;
+				break;
 
-    // TODO_10
-    //  send the movement message
-    if (key != 'x')
-    {
-      mvprintw(1, 0, "Direction number %d", m.direction);
-      mvprintw(2, 0, "msg_type number %d", m.msg_type);
-      zmq_send(socket, &m, sizeof(remote_char_t), 0);
-      zmq_recv(socket, buffer, 255, 0);
-      if (!strcmp(buffer, "Client disconnected")) break;
-      else if (!strcmp(buffer, "Client not disconnected")){
-        printf("%s. Try again",buffer);
-      }
-    }
-    refresh(); /* Print it on to the real screen */
-  } while (key != 27);
+			default:
+				key = 'x';
+				break;
+		}
 
-  endwin(); /* End curses mode		  */
-  printf("%s\n", buffer);
-  // Clean up
-  zmq_close(socket);
-  zmq_ctx_destroy(context);
+		// TODO_10
+		//  send the movement message
+		if (key != 'x')
+		{
+			mvprintw(1, 0, "Direction number %d", m.direction);
+			mvprintw(2, 0, "msg_type number %d", m.msg_type);
+			zmq_send(socket, &m, sizeof(remote_char_t), 0);
+			zmq_recv(socket, buffer, 255, 0);
+			if (!strcmp(buffer, "Client disconnected")) break;
+			else if (!strcmp(buffer, "Client not disconnected")){
+				printf("%s. Try again",buffer);
+			}
+		}
+		refresh(); /* Print it on to the real screen */
+	} while (key != 27);
 
-  return 0;
+	endwin(); /* End curses mode		  */
+	printf("%s\n", buffer);
+	// Clean up
+	zmq_close(socket);
+	zmq_ctx_destroy(context);
+
+	return 0;
 }
