@@ -80,16 +80,24 @@ int main()
 				switch(bad_guys[i].movement){
 
 					case UP:
-						bad_guys[i].pos_y++;
+						bad_guys[i].pos_y--;
+						if(bad_guys[i].pos_y < 2)
+							bad_guys[i].pos_y = 2;
 						break;
 					case DOWN:
-						bad_guys[i].pos_y--;
+						bad_guys[i].pos_y++;
+						if(bad_guys[i].pos_y > 18)
+							bad_guys[i].pos_y = 18;
 						break;
 					case LEFT:
 						bad_guys[i].pos_x--;
+						if(bad_guys[i].pos_x < 2)
+							bad_guys[i].pos_x = 2;
 						break;
 					case RIGHT:
 						bad_guys[i].pos_x++;
+						if(bad_guys[i].pos_x > 18)
+							bad_guys[i].pos_x = 18;
 						break;
 				}
 
