@@ -70,19 +70,19 @@ int main()
 				break;
 			case KEY_LEFT:
 				mvprintw(0, 0, "%d Left arrow is pressed", n);
-				m.value.direction = LEFT;
+				m.direction = LEFT;
 				break;
 			case KEY_RIGHT:
 				mvprintw(0, 0, "%d Right arrow is pressed", n);
-				m.value.direction = RIGHT;
+				m.direction = RIGHT;
 				break;
 			case KEY_DOWN:
 				mvprintw(0, 0, "%d Down arrow is pressed", n);
-				m.value.direction = DOWN;
+				m.direction = DOWN;
 				break;
 			case KEY_UP:
 				mvprintw(0, 0, "%d :Up arrow is pressed", n);
-				m.value.direction = UP;
+				m.direction = UP;
 				break;
 
 			default:
@@ -94,7 +94,7 @@ int main()
 		//  send the movement message
 		if (key != 'x')
 		{
-			mvprintw(1, 0, "Direction number %d", m.value.direction);
+			mvprintw(1, 0, "Direction number %d", m.direction);
 			mvprintw(2, 0, "msg_type number %d", m.msg_type);
 			zmq_send(socket, &m, sizeof(remote_char_t), 0);
 			zmq_recv(socket, buffer, 255, 0);

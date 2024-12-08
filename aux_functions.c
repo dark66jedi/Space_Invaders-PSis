@@ -41,7 +41,7 @@ int init_client_array(client_info *client_data[]){
 }
 
 int new_position(int* x, int *y, direction_t direction, int allowed_mov){
-    if (allowed_mov == 0 || allowed_mov == -1)
+    if (allowed_mov == 0)
     {
         if (direction == UP)
         {
@@ -60,7 +60,7 @@ int new_position(int* x, int *y, direction_t direction, int allowed_mov){
             return -2;
         }
     }
-    else if (allowed_mov == 1 | allowed_mov == -1){
+    else if (allowed_mov == 1){
         if (direction == LEFT)
         {
             (*y) --;
