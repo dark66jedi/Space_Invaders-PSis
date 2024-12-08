@@ -10,13 +10,6 @@
 
 typedef enum direction_t {UP, DOWN, LEFT, RIGHT} direction_t;
 
-typedef struct remote_char_t
-{   
-    int msg_type; /* 0 join   1 - move */
-    char client_id[16]; 
-    direction_t direction ;
-}remote_char_t;
-
 typedef struct client_info
 {
     char ch;
@@ -36,6 +29,12 @@ union content{
 	alien vect[ENEMY_NUMBER];
 };
 
+typedef struct remote_char_t
+{   
+    int msg_type; /* 0 join   1 - move */
+    char client_id[17]; 
+    union content value;
+}remote_char_t;
 
 void generate_client_id(char* client_id);
 int init_client_array(client_info *client_data[]);
