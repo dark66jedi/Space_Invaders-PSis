@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #define WINDOW_SIZE 20
-#define ENEMY_NUMBER 1
+#define ENEMY_NUMBER 8
 
 typedef enum direction_t {UP, DOWN, LEFT, RIGHT} direction_t;
 
@@ -32,7 +32,7 @@ union content{
 typedef struct remote_char_t
 {   
     int msg_type; /* 0 join   1 - move */
-    char client_id[16]; 
+    char client_id[17]; 
     union content value;
 }remote_char_t;
 

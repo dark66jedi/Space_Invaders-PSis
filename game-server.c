@@ -43,7 +43,7 @@ int main()
 	void *socket_client = zmq_socket(context, ZMQ_REP);
 	zmq_bind(socket_client, "tcp://*:5555"); // Bind to TCP port 5555
 	
-	char child_id[16];
+	char child_id[17];
 	generate_client_id(child_id);
 
 
@@ -61,18 +61,45 @@ int main()
 
     int pid = fork();
     if(pid == 0){ //child code
-    	//do child stuff
+		// Create a context
+		void *context = zmq_ctx_new();
+
     	void *socket_child = zmq_socket(context, ZMQ_REQ);
+		//sleep(1);
     	zmq_connect(socket_child, "tcp://localhost:5555");
+		
+		zmq_send(socket_child, 	&m, sizeof(m), 0);
+		char buffer[256];
+		zmq_recv(socket_child, buffer, sizeof(buffer), 0 );
+
     	do{
     		sleep(1);
+
     		for(int i = 0; i < ENEMY_NUMBER; i++){
     			//update aliens
-    			new_position(&(bad_guys[i].pos_x), &(bad_guys[i].pos_y), bad_guys[i].movement, -1);
+				switch(bad_guys[i].movement){
+
+					case UP:
+						bad_guys[i].pos_y++;
+						break;
+					case DOWN:
+						bad_guys[i].pos_y--;
+						break;
+					case LEFT:
+						bad_guys[i].pos_x--;
+						break;
+					case RIGHT:
+						bad_guys[i].pos_x++;
+						break;
+				}
+
     			bad_guys[i].movement = rand() %4;
     		}
+
     		m.msg_type = 5;
     		zmq_send(socket_child, &m, sizeof(m), 0);
+			zmq_recv(socket_child, buffer, sizeof(buffer), 0 );
+
     	} while(1);
 
     } else{ //parrent code
@@ -179,22 +206,26 @@ int main()
 			}
 	    	if(msg.msg_type == 5){
 
-	    		wmove(my_win, 10, 10);
-	    		waddch(my_win,'X');
+				if(strlen(msg.client_id) > 16)
+					msg.client_id[16] = '\0';
+
+				strcpy(reply, "Aliens updated");
+				zmq_send(socket_client, reply, strlen(reply)+1, 0);
 
 	    		if(!strcmp(msg.client_id, child_id)){
 	    			for(int i = 0; i < ENEMY_NUMBER; i++){
 	    				//delete previous	
-	    				wmove(my_win, m.value.vect[i].pos_x, m.value.vect[i].pos_y);
+	    				wmove(my_win, bad_guys[i].pos_x, bad_guys[i].pos_y);
 	    				waddch(my_win,' ');
-	    				m.value.vect[i].pos_x = msg.value.vect[i].pos_x ;
-	    				m.value.vect[i].pos_y  = msg.value.vect[i].pos_y ;
-	    				m.value.vect[i].life = msg.value.vect[i].life;
+
+	    				bad_guys[i].pos_x = msg.value.vect[i].pos_x ;
+						bad_guys[i].pos_y  = msg.value.vect[i].pos_y ;
+	    				bad_guys[i].life = msg.value.vect[i].life;
 
 	    				if(msg.value.vect[i].life == 1){
 	    					//right new alien and update
 	    					wmove(my_win, msg.value.vect[i].pos_x, msg.value.vect[i].pos_y);
-	    					waddch(my_win,'A' | A_BOLD);
+	    					waddch(my_win,'*');
 	    				}
 	    			}
 	    		}

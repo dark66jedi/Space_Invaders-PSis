@@ -8,6 +8,7 @@ void generate_client_id(char* client_id) {
     const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     size_t charsetSize = sizeof(charset) - 1; // Exclude the null terminator
     int length = 16;
+	client_id[16] = '\0';
 
     for (int i = 0; i < length; i++) {
         client_id[i] = charset[rand() % charsetSize];
@@ -23,7 +24,7 @@ int init_client_array(client_info *client_data[]){
             return -1; // Error
         }
         
-        client_data[i]->client_id = malloc(16); // Adjust size as necessary
+        client_data[i]->client_id = malloc(17); // Adjust size as necessary
         if (client_data[i]->client_id == NULL) {
             perror("Failed to allocate memory for client_id");
             free(client_data[i]); // Free allocated memory
@@ -41,7 +42,7 @@ int init_client_array(client_info *client_data[]){
 }
 
 int new_position(int* x, int *y, direction_t direction, int allowed_mov){
-    if (allowed_mov == 0 || allowed_mov == -1)
+    if (allowed_mov == 0 )
     {
         if (direction == UP)
         {
@@ -60,7 +61,7 @@ int new_position(int* x, int *y, direction_t direction, int allowed_mov){
             return -2;
         }
     }
-    else if (allowed_mov == 1 | allowed_mov == -1){
+    else if (allowed_mov == 1 ){
         if (direction == LEFT)
         {
             (*y) --;
