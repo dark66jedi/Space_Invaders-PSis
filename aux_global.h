@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #define WINDOW_SIZE 20
+#define ENEMY_NUMBER 8
 
 typedef enum direction_t {UP, DOWN, LEFT, RIGHT} direction_t;
 
@@ -23,6 +24,18 @@ typedef struct client_info
     int movement; // if 0 vertical, if 1 horizontal
     char *client_id;
 } client_info;
+
+typedef struct alien{
+	int pos_x, pos_y;
+	direction_t movement;
+	int life;
+}alien;
+
+union content{
+	direction_t direction;
+	alien vect[ENEMY_NUMBER];
+};
+
 
 void generate_client_id(char* client_id);
 int init_client_array(client_info *client_data[]);
