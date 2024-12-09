@@ -123,7 +123,7 @@ int handle_astronaut_movement(client_info *client_data[], char *client_id, direc
     
 }
 
-int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_id){
+int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_id, alien bad_guys[ENEMY_NUMBER]){
 	int pos_x = -1;
 	int pos_y = -1;
     for (int i = 0; i < 8; i++)
@@ -141,18 +141,35 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 			
 			if(client_data[i]->movement == 0 && pos_y > WINDOW_SIZE/2){
 				//está à direita
+				
+				for(int j = 0; j < ENEMY_NUMBER ; j++){
+					if(bad_guys[j].pos_x == pos_x){
+						if(bad_guys[j].life == 1){
+							bad_guys[j].life = 0;
+							client_data[i]->points += 10;
+						}
+					}
+				}
+
 				while(pos_y > 1){
 					pos_y--;
 					char a = mvwinch(win, pos_x, pos_y);
 					if(a == ' ')
-						waddch(win,'-');
-					else if(a == '*')
-						client_data[i]->points += 10;
+					waddch(win,'-');
 				}
 			}
 
 			else if(client_data[i]->movement == 0 && pos_y < WINDOW_SIZE/2){
 				//está à esquerda
+				for(int j = 0; j < ENEMY_NUMBER ; j++){
+					if(bad_guys[j].pos_x == pos_x){
+						if(bad_guys[j].life == 1){
+							bad_guys[j].life = 0;
+							client_data[i]->points += 10;
+						}
+					}
+				}
+
 				while(pos_y  < WINDOW_SIZE){
 					pos_y++;
 					char a = mvwinch(win, pos_x, pos_y);
@@ -165,6 +182,16 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 
 			else if(client_data[i]->movement == 1 && pos_x < WINDOW_SIZE/2){
 				//está em cima
+
+				for(int j = 0; j < ENEMY_NUMBER ; j++){
+					if(bad_guys[j].pos_y == pos_y){
+						if(bad_guys[j].life == 1){
+							bad_guys[j].life = 0;
+							client_data[i]->points += 10;
+						}
+					}
+				}
+
 				while(pos_x  < WINDOW_SIZE){
 					pos_x++;
 					char a = mvwinch(win, pos_x, pos_y);
@@ -177,6 +204,15 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 
 			else if(client_data[i]->movement == 1 && pos_x > WINDOW_SIZE/2){
 				//está em baixo
+				for(int j = 0; j < ENEMY_NUMBER ; j++){
+					if(bad_guys[j].pos_y == pos_y){
+						if(bad_guys[j].life == 1){
+							bad_guys[j].life = 0;
+							client_data[i]->points += 10;
+						}
+					}
+				}
+
 				while(pos_x  > 1){
 					pos_x--;
 					char a = mvwinch(win, pos_x, pos_y);
@@ -225,7 +261,7 @@ void handle_astronaut_not_zap(WINDOW *win, client_info *client_data[], char *cli
 				while(pos_y > 1){
 					pos_y--;
 					char a = mvwinch(win, pos_x, pos_y);
-					if(a == '-')
+					if(a == '-'|| a == '*')
 						waddch(win,' ');
 				}
 			}
@@ -235,7 +271,7 @@ void handle_astronaut_not_zap(WINDOW *win, client_info *client_data[], char *cli
 				while(pos_y  < WINDOW_SIZE){
 					pos_y++;
 					char a = mvwinch(win, pos_x, pos_y);
-					if(a == '-')
+					if(a == '-'|| a == '*')
 						waddch(win,' ');
 				}
 			}
@@ -245,7 +281,7 @@ void handle_astronaut_not_zap(WINDOW *win, client_info *client_data[], char *cli
 				while(pos_x  < WINDOW_SIZE){
 					pos_x++;
 					char a = mvwinch(win, pos_x, pos_y);
-					if(a == '|')
+					if(a == '|' || a == '*')
 						waddch(win,' ');
 				}
 			}
@@ -255,7 +291,7 @@ void handle_astronaut_not_zap(WINDOW *win, client_info *client_data[], char *cli
 				while(pos_x  > 1){
 					pos_x--;
 					char a = mvwinch(win, pos_x, pos_y);
-					if(a == '|')
+					if(a == '|'|| a == '*')
 						waddch(win,' ');
 				}
 			}

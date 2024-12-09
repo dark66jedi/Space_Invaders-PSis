@@ -213,7 +213,7 @@ int main()
 				if(strlen(msg.client_id) > 16)
 					msg.client_id[16] = '\0';
 
-				if(handle_astronaut_zap(my_win, client_data, msg.client_id) == -1){
+				if(handle_astronaut_zap(my_win, client_data, msg.client_id, bad_guys) == -1){
 					strcpy(reply, "Can't zapp rn.");
 					zmq_send(socket_client, reply, strlen(reply)+1, 0);
 				} else {
@@ -244,18 +244,17 @@ int main()
 
 	    		if(!strcmp(msg.client_id, child_id)){
 	    			for(int i = 0; i < ENEMY_NUMBER; i++){
-	    				//delete previous	
-	    				wmove(my_win, bad_guys[i].pos_x, bad_guys[i].pos_y);
-	    				waddch(my_win,' ');
+	    				if(bad_guys[i].life == 1){
+							//delete previous	
+							wmove(my_win, bad_guys[i].pos_x, bad_guys[i].pos_y);
+							waddch(my_win,' ');
 
-	    				bad_guys[i].pos_x = msg.value.vect[i].pos_x ;
-						bad_guys[i].pos_y  = msg.value.vect[i].pos_y ;
-	    				bad_guys[i].life = msg.value.vect[i].life;
+							bad_guys[i].pos_x = msg.value.vect[i].pos_x ;
+							bad_guys[i].pos_y  = msg.value.vect[i].pos_y ;
 
-	    				if(msg.value.vect[i].life == 1){
-	    					//right new alien and update
-	    					wmove(my_win, msg.value.vect[i].pos_x, msg.value.vect[i].pos_y);
-	    					waddch(my_win,'*');
+							//right new alien and update
+							wmove(my_win, msg.value.vect[i].pos_x, msg.value.vect[i].pos_y);
+							waddch(my_win,'*');
 	    				}
 	    			}
 	    		}
