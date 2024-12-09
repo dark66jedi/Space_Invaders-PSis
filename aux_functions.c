@@ -52,14 +52,14 @@ int new_position(int* x, int *y, direction_t direction, int allowed_mov){
         if (direction == UP)
         {
             (*x) --;
-            if(*x ==0)
-                *x = 2;
+            if(*x ==2)
+                *x = 3;
             return 1;
         }
         else if(direction == DOWN){
             (*x) ++;
-            if(*x ==WINDOW_SIZE-1)
-                *x = WINDOW_SIZE-3;
+            if(*x ==WINDOW_SIZE-3)
+                *x = WINDOW_SIZE-4;
             return 1;
         }
         else{
@@ -70,14 +70,14 @@ int new_position(int* x, int *y, direction_t direction, int allowed_mov){
         if (direction == LEFT)
         {
             (*y) --;
-            if(*y ==0)
-                *y = 2;
+            if(*y ==2)
+                *y = 3;
             return 1;
         }
         else if(direction == RIGHT){
             (*y) ++;
-            if(*y ==WINDOW_SIZE-1)
-                *y = WINDOW_SIZE-3;
+            if(*y ==WINDOW_SIZE-3)
+                *y = WINDOW_SIZE-4;
             return 1;
         }
         else{

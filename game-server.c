@@ -52,11 +52,11 @@ int main()
 	strcpy(m.client_id, child_id);
 	alien *bad_guys = m.value.vect;
 	for(int i = 0; i < ENEMY_NUMBER; i++){
-		bad_guys[i].pos_x = rand() % WINDOW_SIZE;
-		bad_guys[i].pos_y = rand() % WINDOW_SIZE;
+		bad_guys[i].pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
+		bad_guys[i].pos_y = (rand() % (WINDOW_SIZE-6)) + 3;
 		bad_guys[i].movement = rand() % 4;
 		bad_guys[i].life = 1;
-		printf("Enemy number %d:\n X: %d\n Y: %d\n Mov: %d\n Life: %d\n", i, bad_guys[i].pos_x, bad_guys[i].pos_y, bad_guys[i].movement, bad_guys[i].life);
+		// printf("Enemy number %d:\n X: %d\n Y: %d\n Mov: %d\n Life: %d\n", i, bad_guys[i].pos_x, bad_guys[i].pos_y, bad_guys[i].movement, bad_guys[i].life);
 	}
 
     int pid = fork();
@@ -82,8 +82,8 @@ int main()
 						break;
 					case DOWN:
 						bad_guys[i].pos_y++;
-						if(bad_guys[i].pos_y > 17)
-							bad_guys[i].pos_y = 17;
+						if(bad_guys[i].pos_y > 16)
+							bad_guys[i].pos_y = 16;
 						break;
 					case LEFT:
 						bad_guys[i].pos_x--;
@@ -92,8 +92,8 @@ int main()
 						break;
 					case RIGHT:
 						bad_guys[i].pos_x++;
-						if(bad_guys[i].pos_x > 17)
-							bad_guys[i].pos_x = 17;
+						if(bad_guys[i].pos_x > 16)
+							bad_guys[i].pos_x = 16;
 						break;
 				}
 
