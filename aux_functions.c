@@ -37,6 +37,10 @@ int init_client_array(client_info *client_data[]){
         client_data[i]->movement = -1;
         client_data[i]->pos_x = -1;
         client_data[i]->pos_y = -1;
+        client_data[i]->points = 0;
+        client_data[i]->zap_x = -1;
+        client_data[i]->zap_y = -1;
+
     }
     return 1;
 }

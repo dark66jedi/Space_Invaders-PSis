@@ -71,18 +71,26 @@ int main()
 			case KEY_LEFT:
 				mvprintw(0, 0, "%d Left arrow is pressed", n);
 				m.value.direction = LEFT;
+				m.msg_type = 1;
 				break;
 			case KEY_RIGHT:
 				mvprintw(0, 0, "%d Right arrow is pressed", n);
 				m.value.direction = RIGHT;
+				m.msg_type = 1;
 				break;
 			case KEY_DOWN:
 				mvprintw(0, 0, "%d Down arrow is pressed", n);
+				m.msg_type = 1;
 				m.value.direction = DOWN;
 				break;
 			case KEY_UP:
 				mvprintw(0, 0, "%d :Up arrow is pressed", n);
+				m.msg_type = 1;
 				m.value.direction = UP;
+				break;
+			case ' ':
+				mvprintw(0, 0, "%d :Space arrow is pressed", n);
+				m.msg_type = 2;
 				break;
 
 			default:

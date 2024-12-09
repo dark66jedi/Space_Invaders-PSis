@@ -68,9 +68,6 @@ int main()
 		//sleep(1);
     	zmq_connect(socket_child, "tcp://localhost:5555");
 		
-		zmq_send(socket_child, 	&m, sizeof(m), 0);
-		char buffer[256];
-		zmq_recv(socket_child, buffer, sizeof(buffer), 0 );
 
     	do{
     		sleep(1);
@@ -78,26 +75,25 @@ int main()
     		for(int i = 0; i < ENEMY_NUMBER; i++){
     			//update aliens
 				switch(bad_guys[i].movement){
-
 					case UP:
 						bad_guys[i].pos_y--;
-						if(bad_guys[i].pos_y < 2)
-							bad_guys[i].pos_y = 2;
+						if(bad_guys[i].pos_y < 3)
+							bad_guys[i].pos_y = 3;
 						break;
 					case DOWN:
 						bad_guys[i].pos_y++;
-						if(bad_guys[i].pos_y > 18)
-							bad_guys[i].pos_y = 18;
+						if(bad_guys[i].pos_y > 17)
+							bad_guys[i].pos_y = 17;
 						break;
 					case LEFT:
 						bad_guys[i].pos_x--;
-						if(bad_guys[i].pos_x < 2)
-							bad_guys[i].pos_x = 2;
+						if(bad_guys[i].pos_x < 3)
+							bad_guys[i].pos_x = 3;
 						break;
 					case RIGHT:
 						bad_guys[i].pos_x++;
-						if(bad_guys[i].pos_x > 18)
-							bad_guys[i].pos_x = 18;
+						if(bad_guys[i].pos_x > 17)
+							bad_guys[i].pos_x = 17;
 						break;
 				}
 
@@ -106,6 +102,7 @@ int main()
 
     		m.msg_type = 5;
     		zmq_send(socket_child, &m, sizeof(m), 0);
+			char buffer[256];
 			zmq_recv(socket_child, buffer, sizeof(buffer), 0 );
 
     	} while(1);
@@ -212,6 +209,31 @@ int main()
 					zmq_send(socket_client, reply, strlen(reply)+1, 0);
 				}
 			}
+			if(msg.msg_type == 2){
+				if(strlen(msg.client_id) > 16)
+					msg.client_id[16] = '\0';
+
+				if(handle_astronaut_zap(my_win, client_data, msg.client_id) == -1){
+					strcpy(reply, "Can't zapp rn.");
+					zmq_send(socket_client, reply, strlen(reply)+1, 0);
+				} else {
+					strcpy(reply, "Enemy zapped!");
+					zmq_send(socket_client, reply, strlen(reply)+1, 0);
+				}
+			}
+
+			if(msg.msg_type == 3){
+
+				if(strlen(m.client_id) > 16)
+					msg.client_id[16] = '\0';
+
+				handle_astronaut_not_zap(my_win, client_data, msg.client_id);
+
+				strcpy(reply, "Tu vais morrer!");
+				zmq_send(socket_client, reply, strlen(reply) + 1, 0);
+
+			}
+				
 	    	if(msg.msg_type == 5){
 
 				if(strlen(msg.client_id) > 16)

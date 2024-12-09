@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <zmq.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -122,10 +123,148 @@ int handle_astronaut_movement(client_info *client_data[], char *client_id, direc
     
 }
 
-void handle_astronaut_zap(){
-    
+int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_id){
+	int pos_x = -1;
+	int pos_y = -1;
+    for (int i = 0; i < 8; i++)
+    {
+        if (!strcmp(client_data[i]->client_id,client_id)){
+            pos_x = client_data[i]->pos_x;
+            pos_y = client_data[i]->pos_y;
+
+			if(client_data[i]->zap_y != -1 || client_data[i]->zap_x != -1){
+				return -1;
+			}
+			
+			client_data[i]->zap_x = pos_x;
+			client_data[i]->zap_y = pos_y;
+			
+			if(client_data[i]->movement == 0 && pos_y > WINDOW_SIZE/2){
+				//está à direita
+				while(pos_y > 1){
+					pos_y--;
+					char a = mvwinch(win, pos_x, pos_y);
+					if(a == ' ')
+						waddch(win,'-');
+					else if(a == '*')
+						client_data[i]->points += 10;
+				}
+			}
+
+			else if(client_data[i]->movement == 0 && pos_y < WINDOW_SIZE/2){
+				//está à esquerda
+				while(pos_y  < WINDOW_SIZE){
+					pos_y++;
+					char a = mvwinch(win, pos_x, pos_y);
+					if(a == ' ')
+						waddch(win,'-');
+					else if(a == '*')
+						client_data[i]->points += 10;
+				}
+			}
+
+			else if(client_data[i]->movement == 1 && pos_x < WINDOW_SIZE/2){
+				//está em cima
+				while(pos_x  < WINDOW_SIZE){
+					pos_x++;
+					char a = mvwinch(win, pos_x, pos_y);
+					if(a == ' ')
+						waddch(win,'|');
+					else if(a == '*')
+						client_data[i]->points += 10;
+				}
+			}
+
+			else if(client_data[i]->movement == 1 && pos_x > WINDOW_SIZE/2){
+				//está em baixo
+				while(pos_x  > 1){
+					pos_x--;
+					char a = mvwinch(win, pos_x, pos_y);
+					if(a == ' ')
+						waddch(win,'|');
+					else if(a == '*')
+						client_data[i]->points += 10;
+				}
+			}
+
+			int pid = fork();
+			if(pid == 0){
+				usleep(500000);
+				void *cntx = zmq_ctx_new();
+				void *socket = zmq_socket(cntx, ZMQ_REQ);
+				zmq_connect(socket, "tcp://localhost:5555");
+
+				remote_char_t m;
+				strcpy(m.client_id, client_id);
+				m.msg_type = 3;				
+				zmq_send(socket, &m, sizeof(m), 0);
+				char buff[256];
+				zmq_recv(socket, buff, sizeof(buff), 0);
+				zmq_close(socket);
+				zmq_ctx_destroy(cntx);
+				exit(0);
+			}
+
+		}
+    }
+	return(0);
 }
 
+void handle_astronaut_not_zap(WINDOW *win, client_info *client_data[], char *client_id){
+	int pos_x = -1;
+	int pos_y = -1;
+    for (int i = 0; i < 8; i++)
+    {
+        if (!strcmp(client_data[i]->client_id,client_id)){
+            pos_x = client_data[i]->zap_x;
+            pos_y = client_data[i]->zap_y;
+
+			
+			if(client_data[i]->movement == 0 && pos_y > WINDOW_SIZE/2){
+				//está à direita
+				while(pos_y > 1){
+					pos_y--;
+					char a = mvwinch(win, pos_x, pos_y);
+					if(a == '-')
+						waddch(win,' ');
+				}
+			}
+
+			else if(client_data[i]->movement == 0 && pos_y < WINDOW_SIZE/2){
+				//está à esquerda
+				while(pos_y  < WINDOW_SIZE){
+					pos_y++;
+					char a = mvwinch(win, pos_x, pos_y);
+					if(a == '-')
+						waddch(win,' ');
+				}
+			}
+
+			else if(client_data[i]->movement == 1 && pos_x < WINDOW_SIZE/2){
+				//está em cima
+				while(pos_x  < WINDOW_SIZE){
+					pos_x++;
+					char a = mvwinch(win, pos_x, pos_y);
+					if(a == '|')
+						waddch(win,' ');
+				}
+			}
+
+			else if(client_data[i]->movement == 1 && pos_x > WINDOW_SIZE/2){
+				//está em baixo
+				while(pos_x  > 1){
+					pos_x--;
+					char a = mvwinch(win, pos_x, pos_y);
+					if(a == '|')
+						waddch(win,' ');
+				}
+			}
+				client_data[i]->zap_x = -1;
+				client_data[i]->zap_y = -1;
+
+		}
+    }
+}
 void check_if_client_exists(){
 
 }

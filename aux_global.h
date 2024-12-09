@@ -16,6 +16,8 @@ typedef struct client_info
     int pos_x, pos_y;
     int movement; // if 0 vertical, if 1 horizontal
     char *client_id;
+	int zap_x, zap_y;
+	int points;
 } client_info;
 
 typedef struct alien{
