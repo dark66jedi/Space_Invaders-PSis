@@ -93,30 +93,32 @@ int handle_astronaut_movement(client_info *client_data[], char *client_id, direc
     for (int i = 0; i < 8; i++)
     {
         if (!strcmp(client_data[i]->client_id,client_id)){
-            (*pos_x) = client_data[i]->pos_x;
-            (*pos_y) = client_data[i]->pos_y;
+			if(client_data[i]->stunned == 0){
+				(*pos_x) = client_data[i]->pos_x;
+				(*pos_y) = client_data[i]->pos_y;
 
-            int new_pos_x = client_data[i]->pos_x;
-            int new_pos_y = client_data[i]->pos_y;
+				int new_pos_x = client_data[i]->pos_x;
+				int new_pos_y = client_data[i]->pos_y;
 
-            int response;
-            response = new_position(&new_pos_x, &new_pos_y, direction, client_data[i]->movement);
-            if(response == -1){
-                // error ocurred: didnt update position
-                return -1;
-            }
-            else if(response == -2){
-                // invalid move: didnt update position
-                return -2;
-            }
-            else if(response == 1){
-                // player move: update position
-                client_data[i]->pos_x = new_pos_x;
-                client_data[i]->pos_y = new_pos_y;
+				int response;
+				response = new_position(&new_pos_x, &new_pos_y, direction, client_data[i]->movement);
+				if(response == -1){
+					// error ocurred: didnt update position
+					return -1;
+				}
+				else if(response == -2){
+					// invalid move: didnt update position
+					return -2;
+				}
+				else if(response == 1){
+					// player move: update position
+					client_data[i]->pos_x = new_pos_x;
+					client_data[i]->pos_y = new_pos_y;
 
-                return i;
-            }
-            else return -1;
+					return i;
+				}
+			}
+			else return -1;
         }
     }
     return -1;
@@ -151,11 +153,35 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 					}
 				}
 
+				for(int j = 0; j < 8; j++){
+					if(client_data[j]->pos_x == pos_x){
+						client_data[j]->stunned = 1;
+						int pid2 = fork();
+						if(pid2 == 0){
+							sleep(3);
+
+							void *cntx = zmq_ctx_new();
+							void *socket = zmq_socket(cntx, ZMQ_REQ);
+							zmq_connect(socket, "tcp://localhost:5555");
+
+							remote_char_t m;
+							strcpy(m.client_id, client_data[j]->client_id);
+							m.msg_type = 4;				
+							zmq_send(socket, &m, sizeof(m), 0);
+							char buff[256];
+							zmq_recv(socket, buff, sizeof(buff), 0);
+							zmq_close(socket);
+							zmq_ctx_destroy(cntx);
+							exit(0);
+						}
+					}
+				}
+
 				while(pos_y > 1){
 					pos_y--;
 					char a = mvwinch(win, pos_x, pos_y);
 					if(a == ' ')
-					waddch(win,'-');
+						waddch(win,'-');
 				}
 			}
 
@@ -166,6 +192,30 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 						if(bad_guys[j].life == 1){
 							bad_guys[j].life = 0;
 							client_data[i]->points += 10;
+						}
+					}
+				}
+
+				for(int j = 0; j < 8; j++){
+					if(client_data[j]->pos_x == pos_x){
+						client_data[j]->stunned = 1;
+						int pid2 = fork();
+						if(pid2 == 0){
+							sleep(3);
+
+							void *cntx = zmq_ctx_new();
+							void *socket = zmq_socket(cntx, ZMQ_REQ);
+							zmq_connect(socket, "tcp://localhost:5555");
+
+							remote_char_t m;
+							strcpy(m.client_id, client_data[j]->client_id);
+							m.msg_type = 4;				
+							zmq_send(socket, &m, sizeof(m), 0);
+							char buff[256];
+							zmq_recv(socket, buff, sizeof(buff), 0);
+							zmq_close(socket);
+							zmq_ctx_destroy(cntx);
+							exit(0);
 						}
 					}
 				}
@@ -192,6 +242,29 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 					}
 				}
 
+				for(int j = 0; j < 8; j++){
+					if(client_data[j]->pos_y == pos_y){
+						client_data[j]->stunned = 1;
+						int pid2 = fork();
+						if(pid2 == 0){
+							sleep(3);
+
+							void *cntx = zmq_ctx_new();
+							void *socket = zmq_socket(cntx, ZMQ_REQ);
+							zmq_connect(socket, "tcp://localhost:5555");
+
+							remote_char_t m;
+							strcpy(m.client_id, client_data[j]->client_id);
+							m.msg_type = 4;				
+							zmq_send(socket, &m, sizeof(m), 0);
+							char buff[256];
+							zmq_recv(socket, buff, sizeof(buff), 0);
+							zmq_close(socket);
+							zmq_ctx_destroy(cntx);
+							exit(0);
+						}
+					}
+				}
 				while(pos_x  < WINDOW_SIZE){
 					pos_x++;
 					char a = mvwinch(win, pos_x, pos_y);
@@ -213,6 +286,29 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 					}
 				}
 
+				for(int j = 0; j < 8; j++){
+					if(client_data[j]->pos_y == pos_y){
+						client_data[j]->stunned = 1;
+						int pid2 = fork();
+						if(pid2 == 0){
+							sleep(3);
+
+							void *cntx = zmq_ctx_new();
+							void *socket = zmq_socket(cntx, ZMQ_REQ);
+							zmq_connect(socket, "tcp://localhost:5555");
+
+							remote_char_t m;
+							strcpy(m.client_id, client_data[j]->client_id);
+							m.msg_type = 4;				
+							zmq_send(socket, &m, sizeof(m), 0);
+							char buff[256];
+							zmq_recv(socket, buff, sizeof(buff), 0);
+							zmq_close(socket);
+							zmq_ctx_destroy(cntx);
+							exit(0);
+						}
+					}
+				}
 				while(pos_x  > 1){
 					pos_x--;
 					char a = mvwinch(win, pos_x, pos_y);

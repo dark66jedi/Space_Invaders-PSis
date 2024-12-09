@@ -223,7 +223,6 @@ int main()
 			}
 
 			if(msg.msg_type == 3){
-
 				if(strlen(m.client_id) > 16)
 					msg.client_id[16] = '\0';
 
@@ -231,7 +230,22 @@ int main()
 
 				strcpy(reply, "Tu vais morrer!");
 				zmq_send(socket_client, reply, strlen(reply) + 1, 0);
+			}
 
+			if(msg.msg_type == 4){
+				if(strlen(m.client_id) > 16)
+					msg.client_id[16] = '\0';
+				
+				for(int j = 0; j < 8; j++){
+					if(!strcmp(client_data[j]->client_id, msg.client_id)){
+						client_data[j]->stunned = 0;
+						break;
+					}
+				}
+
+				strcpy(reply, "No longer stunned");
+				zmq_send(socket_client, reply, strlen(reply) + 1, 0);
+				
 			}
 				
 	    	if(msg.msg_type == 5){

@@ -18,6 +18,7 @@ typedef struct client_info
     char *client_id;
 	int zap_x, zap_y;
 	int points;
+	int stunned;
 } client_info;
 
 typedef struct alien{
