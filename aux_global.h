@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ncurses.h>
 
 #define WINDOW_SIZE 20
 #define ENEMY_NUMBER 8
@@ -42,5 +43,6 @@ typedef struct remote_char_t
 void generate_client_id(char* client_id);
 int init_client_array(client_info *client_data[]);
 int new_position(int* x, int *y, direction_t direction, int allowed_mov);
+void update_points_display(WINDOW *points_display, client_info *client_data[]);
 
 #endif

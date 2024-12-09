@@ -123,6 +123,10 @@ int main()
 		box(my_win, 0 , 0);	
 		wrefresh(my_win);
 
+		WINDOW * points = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 25);
+		box(points, 0 , 0);	
+		wrefresh(points);
+
 		int client_idx;
 		char reply[256];
 		int delete_pos_x, delete_pos_y;
@@ -279,7 +283,9 @@ int main()
 	    	}
 
 			/* draw mark on new position */
-
+			update_points_display(points, client_data);
+			wrefresh(points);
+			
 			wrefresh(my_win);
 		}
 		// endwin();			/* End curses mode		  */

@@ -86,3 +86,14 @@ int new_position(int* x, int *y, direction_t direction, int allowed_mov){
     }
     return -1;
 }
+
+void update_points_display(WINDOW *points_display, client_info *client_data[]){
+    mvwprintw(points_display, 4, 27, "SCORE:");
+    for (int i = 0; i < 8; i++)
+    {
+        if(strcmp(client_data[i]->client_id, "----------------")){
+            mvwprintw(points_display, i+5, 28, "%c - %d", client_data[i]->ch, client_data[i]->points);
+        }
+    }
+    
+}
