@@ -154,7 +154,7 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 				}
 
 				for(int j = 0; j < 8; j++){
-					if(client_data[j]->pos_x == pos_x){
+					if(client_data[j]->pos_x == pos_x && strcmp(client_id, client_data[j]->client_id)){
 						client_data[j]->stunned = 1;
 						int pid2 = fork();
 						if(pid2 == 0){
@@ -197,7 +197,7 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 				}
 
 				for(int j = 0; j < 8; j++){
-					if(client_data[j]->pos_x == pos_x){
+					if(client_data[j]->pos_x == pos_x && strcmp(client_id, client_data[j]->client_id)){
 						client_data[j]->stunned = 1;
 						int pid2 = fork();
 						if(pid2 == 0){
@@ -225,8 +225,6 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 					char a = mvwinch(win, pos_x, pos_y);
 					if(a == ' ')
 						waddch(win,'-');
-					else if(a == '*')
-						client_data[i]->points += 10;
 				}
 			}
 
@@ -243,7 +241,7 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 				}
 
 				for(int j = 0; j < 8; j++){
-					if(client_data[j]->pos_y == pos_y){
+					if(client_data[j]->pos_y == pos_y && strcmp(client_id, client_data[i]->client_id)){
 						client_data[j]->stunned = 1;
 						int pid2 = fork();
 						if(pid2 == 0){
@@ -270,8 +268,6 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 					char a = mvwinch(win, pos_x, pos_y);
 					if(a == ' ')
 						waddch(win,'|');
-					else if(a == '*')
-						client_data[i]->points += 10;
 				}
 			}
 
@@ -287,7 +283,7 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 				}
 
 				for(int j = 0; j < 8; j++){
-					if(client_data[j]->pos_y == pos_y){
+					if(client_data[j]->pos_y == pos_y && strcmp(client_id, client_data[i]->client_id)){
 						client_data[j]->stunned = 1;
 						int pid2 = fork();
 						if(pid2 == 0){
@@ -314,8 +310,6 @@ int handle_astronaut_zap(WINDOW *win, client_info *client_data[], char *client_i
 					char a = mvwinch(win, pos_x, pos_y);
 					if(a == ' ')
 						waddch(win,'|');
-					else if(a == '*')
-						client_data[i]->points += 10;
 				}
 			}
 
