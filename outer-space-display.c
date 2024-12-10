@@ -36,14 +36,19 @@ int main()
 
     /* creates a window and draws a border */
     WINDOW *my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
+    WINDOW *points_display = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 25);
 
     while (1)
     {
         char buffer[WINDOW_SIZE * WINDOW_SIZE];
         zmq_recv(socket, &buffer, sizeof(buffer), 0);
         deserialize_window(my_win, buffer);
+        zmq_recv(socket, &buffer, sizeof(buffer), 0);
+        deserialize_window(points_display, buffer);
         box(my_win, 0 , 0);
-        wrefresh(my_win);		
+        wrefresh(my_win);
+        box(points_display, 0 , 0);
+        wrefresh(points_display);
     }
   	endwin();
     zmq_close(socket);

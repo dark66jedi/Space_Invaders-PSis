@@ -133,9 +133,12 @@ int main()
 		while (1)
 		{
 			// send to display
-			char buffer[WINDOW_SIZE * WINDOW_SIZE];
-			serialize_window(my_win, buffer);
-			zmq_send(socket_display, &buffer, sizeof(buffer), 0);
+			char win_buffer[WINDOW_SIZE * WINDOW_SIZE];
+			serialize_window(my_win, win_buffer);
+			zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
+
+			serialize_window(points, win_buffer);
+			zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
 
 			zmq_recv(socket_client, &msg, sizeof(msg), 0);
 			// printf("Received msg_type: %d\n", msg.msg_type);
@@ -249,7 +252,7 @@ int main()
 
 				strcpy(reply, "No longer stunned");
 				zmq_send(socket_client, reply, strlen(reply) + 1, 0);
-				
+
 			}
 				
 	    	if(msg.msg_type == 5){
@@ -283,12 +286,13 @@ int main()
 	    	}
 
 			/* draw mark on new position */
+			wrefresh(my_win);
+
+			// print out points
 			update_points_display(points, client_data);
 			wrefresh(points);
-			
-			wrefresh(my_win);
 		}
-		// endwin();			/* End curses mode		  */
+		endwin();			/* End curses mode		  */
 		zmq_close(socket_client);
 		zmq_close(socket_display);
 		zmq_ctx_destroy(context);
