@@ -25,7 +25,6 @@ int main()
 	zmq_send(socket, &m, sizeof(m), 0);
 	char buffer[256];
 	zmq_recv(socket, buffer, 255, 0);
-	printf("%s\n", buffer);
 
 	// TODO Adicionar disconnects 
 	if (!strcmp(buffer, "Maximum number of players reached")){
@@ -33,7 +32,7 @@ int main()
 		zmq_close(socket);
 		zmq_ctx_destroy(context);
 		return -1;
-}
+	}
 	else if (!strcmp(buffer, "An error occurred")){
 		printf("%s /n", buffer);
 		zmq_close(socket);

@@ -56,7 +56,6 @@ int main()
 		bad_guys[i].pos_y = (rand() % (WINDOW_SIZE-6)) + 3;
 		bad_guys[i].movement = rand() % 4;
 		bad_guys[i].life = 1;
-		// printf("Enemy number %d:\n X: %d\n Y: %d\n Mov: %d\n Life: %d\n", i, bad_guys[i].pos_x, bad_guys[i].pos_y, bad_guys[i].movement, bad_guys[i].life);
 	}
 
     int pid = fork();
@@ -141,9 +140,6 @@ int main()
 			zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
 
 			zmq_recv(socket_client, &msg, sizeof(msg), 0);
-			// printf("Received msg_type: %d\n", msg.msg_type);
-			// printf("Received direction: %d\n", msg.direction);
-			// printf("Received client_id: %s\n", msg.client_id);
 
 			// astronaut_disconnect
 			if (msg.msg_type == -1){
@@ -160,7 +156,6 @@ int main()
 					waddch(my_win,' ');
 				}
 				zmq_send(socket_client, reply, strlen(reply)+1, 0);
-				// printf("Number of players after disconnect: %d\n", n_players);
 			}
 
 			// astronaut_connect
@@ -170,7 +165,6 @@ int main()
 					strcpy(reply, "Maximum number of players reached");
 					zmq_send(socket_client, reply, strlen(reply)+1, 0);
 				}else if(client_idx>=0 && client_idx<=7){
-					// printf("\nCHAR: %c\tCLIENT_ID: %s\tIDX: %d\t\n",client_data[client_idx]->ch,client_data[client_idx]->client_id, client_idx);
 					zmq_send(socket_client, client_data[client_idx]->client_id, strlen(client_data[client_idx]->client_id)+1, 0);
 					wmove(my_win, client_data[client_idx]->pos_x, client_data[client_idx]->pos_y);
 					waddch(my_win,client_data[client_idx]->ch| A_BOLD);
@@ -183,8 +177,6 @@ int main()
 				direction_t direction = msg.value.direction;
 				if(strlen(msg.client_id) > 16)
 					msg.client_id[16] = '\0';
-
-				// mvprintw(2, 25, "msg_type number %d", m.msg_type);
 
 				client_idx = handle_astronaut_movement(client_data, msg.client_id, direction, &delete_pos_x, &delete_pos_y);
 

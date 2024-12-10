@@ -63,7 +63,6 @@ int handle_astronaut_connect(client_info *client_data[], int *n_players) {
     }
 
     // If no free slot was found
-    fprintf(stderr, "No free slot available for a new player.\n");
     return -1;
 }
 
@@ -72,7 +71,6 @@ int handle_astronaut_disconnect(client_info *client_data[], int *n_players, char
     for (int i = 0; i < 8; i++)
     {
         if (!strcmp(client_data[i]->client_id,client_id)){
-            // printf("Client about to disconnect: %c\n", client_data[i]->ch);
             client_data[i]->ch = '\0';
             strcpy(client_data[i]->client_id,"----------------");
             client_data[i]->movement = -1;
