@@ -26,7 +26,7 @@ int main()
 
     // Create a REP socket
     void *socket = zmq_socket(context, ZMQ_SUB);
-    zmq_bind(socket, "tcp://*:5556"); // Bind to TCP port 5556
+	zmq_connect(socket, "tcp://localhost:5556"); // Connect to display
     zmq_setsockopt(socket, ZMQ_SUBSCRIBE, "", 0);
 
 	initscr();		    	

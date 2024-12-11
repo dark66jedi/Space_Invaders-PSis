@@ -109,7 +109,7 @@ int main()
     } else{ //parrent code
 
 		void *socket_display = zmq_socket(context, ZMQ_PUB);
-		zmq_connect(socket_display, "tcp://localhost:5556"); // Connect to display
+		zmq_bind(socket_display, "tcp://*:5556"); // Bind to TCP port 5556
 
 		//curses init
 		initscr();
