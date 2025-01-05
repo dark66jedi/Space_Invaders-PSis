@@ -2,6 +2,8 @@
 *
 
 # exceptions (using !) to the files to ignore
+!Part-A/
+!Part-B/
 !*.c
 !*.h
 !makefile
