@@ -83,11 +83,10 @@ int main()
     }
 
     initscr();		    	
-	cbreak();				
+    cbreak();				
     keypad(stdscr, TRUE);   
-	noecho();
+    noecho();
 
-    // Threads
     pthread_t display_thread;
 
     pthread_create(&display_thread, NULL, update_display_thread, NULL);
@@ -141,7 +140,7 @@ int main()
     
     pthread_join(display_thread, NULL);
 
-  	endwin();
+    endwin();
     zmq_close(socket);
     zmq_ctx_destroy(context);
 
