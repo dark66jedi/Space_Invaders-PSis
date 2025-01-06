@@ -10,8 +10,8 @@
 #include <string.h>
 #include <pthread.h>
 
-// Global variables for communication
-int keep_running = 1; // Flag to control thread execution
+// Flag to stop client
+int keep_running = 1;
 
 #define WINDOW_SIZE 20
 
@@ -24,14 +24,14 @@ void deserialize_window(WINDOW *win, char *buffer) {
     }
 }
 
-// Thread function to receive messages
+// Thread function to display the board
 void *update_display_thread(void *arg)
 {
     void *context = zmq_ctx_new();
 
     // Create a REP socket
     void *socket = zmq_socket(context, ZMQ_SUB);
-	zmq_connect(socket, "tcp://localhost:5556"); // Connect to display
+	zmq_connect(socket, "tcp://localhost:5556");
     zmq_setsockopt(socket, ZMQ_SUBSCRIBE, "", 0);			    
 
     /* creates a window and draws a border */
@@ -52,15 +52,6 @@ void *update_display_thread(void *arg)
     }
     zmq_close(socket);
     zmq_ctx_destroy(context);
-    return NULL;
-}
-
-void *movement_thread(void *socket)
-{
-    remote_char_t m;
-    int key;
-
-    
     return NULL;
 }
 
@@ -97,7 +88,7 @@ int main()
 	noecho();
 
     // Threads
-    pthread_t display_thread, move_thread;
+    pthread_t display_thread;
 
     pthread_create(&display_thread, NULL, update_display_thread, NULL);
 
