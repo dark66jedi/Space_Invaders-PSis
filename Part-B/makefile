@@ -10,7 +10,7 @@ SRCS3 = outer-space-display.c aux_global.h
 SRCS4 = astronaut-display-client.c aux_global.h
 
 # Object files
-OBJS1 = game-server.o message_handler.o aux_functions.o
+OBJS1 = game-server.o message_handler.o aux_functions.o LinkedList.o
 OBJS2 = astronaut-client.o aux_functions.o
 OBJS3 = outer-space-display.o aux_functions.o
 OBJS4 = astronaut-display-client.o aux_functions.o
@@ -57,6 +57,9 @@ message_handler.o: message_handler.c message_handler.h aux_global.h
 
 aux_functions.o: aux_functions.c aux_global.h 
 	$(CC) $(CFLAGS) -c aux_functions.c
+
+LinkedList.o: LinkedList.c LinkedList.h defs.h
+	$(CC) -c $(CFLAGS) LinkedList.c
 
 # Clean up build files
 clean:

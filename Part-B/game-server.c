@@ -8,6 +8,7 @@
 #include <zmq.h>
 #include "message_handler.h"
 #include "aux_global.h"
+#include "LinkedList.h"
 
 #define WINDOW_SIZE 20
 
@@ -18,6 +19,37 @@ void serialize_window(WINDOW *win, char *buffer) {
             buffer[idx++] = mvwinch(win, y, x) & A_CHARTEXT; // Get character only
         }
     }
+}
+
+void *alien_thread(alien *bad_guy){
+	while(bad_guy->life == 1){
+		sleep(1);
+		//update aliens
+		switch(bad_guy->movement){
+			case UP:
+				bad_guy->pos_y--;
+				if(bad_guy->pos_y < 3)
+					bad_guy->pos_y = 3;
+			break;
+			case DOWN:
+				bad_guy->pos_y++;
+				if(bad_guy->pos_y > 16)
+					bad_guy->pos_y = 16;
+			break;
+			case LEFT:
+				bad_guy->pos_x--;
+				if(bad_guy->pos_x < 3)
+					bad_guy->pos_x = 3;
+			break;
+			case RIGHT:
+				bad_guy->pos_x++;
+				if(bad_guy->pos_x > 16)
+					bad_guy->pos_x = 16;
+			break;
+		}
+
+		bad_guy->movement = rand() %4;
+	}
 }
 
 int main()
@@ -35,6 +67,7 @@ int main()
 	int n_players = 0;
 
 	remote_char_t msg;
+	remote_char_t m;
 
 	// Create a context
 	void *context = zmq_ctx_new();
@@ -42,256 +75,216 @@ int main()
 	// Create a REP socket
 	void *socket_client = zmq_socket(context, ZMQ_REP);
 	zmq_bind(socket_client, "tcp://*:5555"); // Bind to TCP port 5555
-	
+
 	char child_id[17];
 	generate_client_id(child_id);
 
+	
+	//Initial aliens and threads
+	
+	LinkedList *bad_guys = initLinkedList();
+	LinkedList *alien_th = initLinkedList();
 
-	remote_char_t m;
-	m.msg_type = 5;
-	strcpy(m.client_id, child_id);
-	alien *bad_guys = m.value.vect;
 	for(int i = 0; i < ENEMY_NUMBER; i++){
-		bad_guys[i].pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
-		bad_guys[i].pos_y = (rand() % (WINDOW_SIZE-6)) + 3;
-		bad_guys[i].movement = rand() % 4;
-		bad_guys[i].life = 1;
+		alien *bad_guy = (alien *) malloc(sizeof(alien));
+		pthread_t *thread = (pthread_t *) malloc(sizeof(pthread_t));
+
+		bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
+		bad_guy->pos_y = (rand() % (WINDOW_SIZE-6)) + 3;
+		bad_guy->movement = rand() % 4;
+		bad_guy->life = 1;
+
+		pthread_create(thread, NULL, (void *(*)(void*)) alien_thread, bad_guy);
+		bad_guys = insertUnsortedLinkedList(bad_guys, (Item) bad_guy);
+		alien_th = insertUnsortedLinkedList(alien_th, (Item) thread);
+
 	}
 
-    int pid = fork();
-    if(pid == 0){ //child code
-		// Create a context
-		void *context = zmq_ctx_new();
 
-    	void *socket_child = zmq_socket(context, ZMQ_REQ);
-		//sleep(1);
-    	zmq_connect(socket_child, "tcp://localhost:5555");
-		
 
-    	do{
-    		sleep(1);
+	void *socket_display = zmq_socket(context, ZMQ_PUB);
+	zmq_bind(socket_display, "tcp://*:5556"); // Bind to TCP port 5556
 
-    		for(int i = 0; i < ENEMY_NUMBER; i++){
-    			//update aliens
-				switch(bad_guys[i].movement){
-					case UP:
-						bad_guys[i].pos_y--;
-						if(bad_guys[i].pos_y < 3)
-							bad_guys[i].pos_y = 3;
-						break;
-					case DOWN:
-						bad_guys[i].pos_y++;
-						if(bad_guys[i].pos_y > 16)
-							bad_guys[i].pos_y = 16;
-						break;
-					case LEFT:
-						bad_guys[i].pos_x--;
-						if(bad_guys[i].pos_x < 3)
-							bad_guys[i].pos_x = 3;
-						break;
-					case RIGHT:
-						bad_guys[i].pos_x++;
-						if(bad_guys[i].pos_x > 16)
-							bad_guys[i].pos_x = 16;
-						break;
-				}
+	void *socket_score = zmq_socket(context, ZMQ_PUB);
+	zmq_bind(socket_score, "tcp://*:5557"); // Bind to TCP port 5556
 
-    			bad_guys[i].movement = rand() %4;
-    		}
+	//curses init
+	initscr();
+	cbreak();
+	keypad(stdscr, TRUE);
+	noecho();
 
-    		m.msg_type = 5;
-    		zmq_send(socket_child, &m, sizeof(m), 0);
-			char buffer[256];
-			zmq_recv(socket_child, buffer, sizeof(buffer), 0 );
+	/* creates a window and draws a border */
+	WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
+	box(my_win, 0 , 0);	
+	wrefresh(my_win);
 
-    	} while(1);
+	WINDOW * points = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 25);
+	box(points, 0 , 0);	
+	wrefresh(points);
 
-    } else{ //parrent code
+	int client_idx;
+	char reply[256];
+	int delete_pos_x, delete_pos_y;
+	while (1)
+	{
+		// send to display
+		char win_buffer[WINDOW_SIZE * WINDOW_SIZE];
+		serialize_window(my_win, win_buffer);
+		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
 
-		void *socket_display = zmq_socket(context, ZMQ_PUB);
-		zmq_bind(socket_display, "tcp://*:5556"); // Bind to TCP port 5556
+		serialize_window(points, win_buffer);
+		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
 
-		void *socket_score = zmq_socket(context, ZMQ_PUB);
-		zmq_bind(socket_score, "tcp://*:5557"); // Bind to TCP port 5556
+		zmq_recv(socket_client, &msg, sizeof(msg), 0);
 
-		//curses init
-		initscr();
-		cbreak();
-		keypad(stdscr, TRUE);
-		noecho();
+		// astronaut_disconnect
+		if (msg.msg_type == -1){
+			if(strlen(msg.client_id) > 16)
+				msg.client_id[16] = '\0';
 
-		/* creates a window and draws a border */
-		WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
-		box(my_win, 0 , 0);	
-		wrefresh(my_win);
+			client_idx = handle_astronaut_disconnect(client_data, &n_players, msg.client_id, &delete_pos_x, &delete_pos_y);
 
-		WINDOW * points = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 25);
-		box(points, 0 , 0);	
-		wrefresh(points);
+			if(client_idx == -1){
+				strcpy(reply, "Client not disconnected");
+			}else if(client_idx == 1){
+				strcpy(reply, "Client disconnected");
+				wmove(my_win, delete_pos_x, delete_pos_y);
+				waddch(my_win,' ');
+			}
+			zmq_send(socket_client, reply, strlen(reply)+1, 0);
+		}
 
-		int client_idx;
-		char reply[256];
-		int delete_pos_x, delete_pos_y;
-		while (1)
-		{
-			// send to display
-			char win_buffer[WINDOW_SIZE * WINDOW_SIZE];
-			serialize_window(my_win, win_buffer);
-			zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
-
-			serialize_window(points, win_buffer);
-			zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
-
-			zmq_recv(socket_client, &msg, sizeof(msg), 0);
-
-			// astronaut_disconnect
-			if (msg.msg_type == -1){
-				if(strlen(msg.client_id) > 16)
-					msg.client_id[16] = '\0';
-
-				client_idx = handle_astronaut_disconnect(client_data, &n_players, msg.client_id, &delete_pos_x, &delete_pos_y);
-
-				if(client_idx == -1){
-					strcpy(reply, "Client not disconnected");
-				}else if(client_idx == 1){
-					strcpy(reply, "Client disconnected");
-					wmove(my_win, delete_pos_x, delete_pos_y);
-					waddch(my_win,' ');
-				}
+		// astronaut_connect
+		if(msg.msg_type == 0){
+			client_idx = handle_astronaut_connect(client_data, &n_players);
+			if(client_idx == -1){
+				strcpy(reply, "Maximum number of players reached");
+				zmq_send(socket_client, reply, strlen(reply)+1, 0);
+			}else if(client_idx>=0 && client_idx<=7){
+				zmq_send(socket_client, client_data[client_idx]->client_id, strlen(client_data[client_idx]->client_id)+1, 0);
+				wmove(my_win, client_data[client_idx]->pos_x, client_data[client_idx]->pos_y);
+				waddch(my_win,client_data[client_idx]->ch| A_BOLD);
+			}else{
+				strcpy(reply, "An error occurred");
 				zmq_send(socket_client, reply, strlen(reply)+1, 0);
 			}
+		}
+		if(msg.msg_type == 1){
+			direction_t direction = msg.value.direction;
+			if(strlen(msg.client_id) > 16)
+				msg.client_id[16] = '\0';
 
-			// astronaut_connect
-			if(msg.msg_type == 0){
-				client_idx = handle_astronaut_connect(client_data, &n_players);
-				if(client_idx == -1){
-					strcpy(reply, "Maximum number of players reached");
-					zmq_send(socket_client, reply, strlen(reply)+1, 0);
-				}else if(client_idx>=0 && client_idx<=7){
-					zmq_send(socket_client, client_data[client_idx]->client_id, strlen(client_data[client_idx]->client_id)+1, 0);
-					wmove(my_win, client_data[client_idx]->pos_x, client_data[client_idx]->pos_y);
-					waddch(my_win,client_data[client_idx]->ch| A_BOLD);
-				}else{
-					strcpy(reply, "An error occurred");
-					zmq_send(socket_client, reply, strlen(reply)+1, 0);
+			client_idx = handle_astronaut_movement(client_data, msg.client_id, direction, &delete_pos_x, &delete_pos_y);
+
+			if(client_idx == -1){
+				// error ocurred: didnt update position
+				strcpy(reply, "An error ocurred: position not updated");
+				zmq_send(socket_client, reply, strlen(reply)+1, 0);
+			}
+			else if(client_idx == -2){
+				// invalid move: didnt update position
+				strcpy(reply, "Invalid move: position not updated");
+				zmq_send(socket_client, reply, strlen(reply)+1, 0);
+			}
+			else if(client_idx>=0 && client_idx<=7){
+				// player move: update position
+				strcpy(reply, "Player moved: position updated");
+				zmq_send(socket_client, reply, strlen(reply)+1, 0);
+
+				wmove(my_win, delete_pos_x, delete_pos_y);
+				waddch(my_win,' ');
+
+				wmove(my_win, client_data[client_idx]->pos_x, client_data[client_idx]->pos_y);
+				waddch(my_win,client_data[client_idx]->ch| A_BOLD);
+
+			}
+			else{
+				// error ocurred: didnt update position
+				strcpy(reply, "An error ocurred: position not updated");
+				zmq_send(socket_client, reply, strlen(reply)+1, 0);
+			}
+		}
+		if(msg.msg_type == 2){
+			if(strlen(msg.client_id) > 16)
+				msg.client_id[16] = '\0';
+
+			if(handle_astronaut_zap(my_win, client_data, msg.client_id, bad_guys) == -1){
+				strcpy(reply, "Can't zapp rn.");
+				zmq_send(socket_client, reply, strlen(reply)+1, 0);
+			} else {
+				strcpy(reply, "Enemy zapped!");
+				zmq_send(socket_client, reply, strlen(reply)+1, 0);
+			}
+		}
+
+		if(msg.msg_type == 3){
+			if(strlen(m.client_id) > 16)
+				msg.client_id[16] = '\0';
+
+			handle_astronaut_not_zap(my_win, client_data, msg.client_id);
+
+			strcpy(reply, "Tu vais morrer!");
+			zmq_send(socket_client, reply, strlen(reply) + 1, 0);
+		}
+
+		if(msg.msg_type == 4){
+			if(strlen(m.client_id) > 16)
+				msg.client_id[16] = '\0';
+
+			for(int j = 0; j < 8; j++){
+				if(!strcmp(client_data[j]->client_id, msg.client_id)){
+					client_data[j]->stunned = 0;
+					break;
 				}
 			}
-			if(msg.msg_type == 1){
-				direction_t direction = msg.value.direction;
-				if(strlen(msg.client_id) > 16)
-					msg.client_id[16] = '\0';
 
-				client_idx = handle_astronaut_movement(client_data, msg.client_id, direction, &delete_pos_x, &delete_pos_y);
+			strcpy(reply, "No longer stunned");
+			zmq_send(socket_client, reply, strlen(reply) + 1, 0);
 
-				if(client_idx == -1){
-					// error ocurred: didnt update position
-					strcpy(reply, "An error ocurred: position not updated");
-					zmq_send(socket_client, reply, strlen(reply)+1, 0);
-				}
-				else if(client_idx == -2){
-					// invalid move: didnt update position
-					strcpy(reply, "Invalid move: position not updated");
-					zmq_send(socket_client, reply, strlen(reply)+1, 0);
-				}
-				else if(client_idx>=0 && client_idx<=7){
-					// player move: update position
-					strcpy(reply, "Player moved: position updated");
-					zmq_send(socket_client, reply, strlen(reply)+1, 0);
+		}
 
-					wmove(my_win, delete_pos_x, delete_pos_y);
-					waddch(my_win,' ');
+		if(msg.msg_type == 5){
 
-					wmove(my_win, client_data[client_idx]->pos_x, client_data[client_idx]->pos_y);
-					waddch(my_win,client_data[client_idx]->ch| A_BOLD);
+			if(strlen(msg.client_id) > 16)
+				msg.client_id[16] = '\0';
 
-				}
-				else{
-					// error ocurred: didnt update position
-					strcpy(reply, "An error ocurred: position not updated");
-					zmq_send(socket_client, reply, strlen(reply)+1, 0);
-				}
-			}
-			if(msg.msg_type == 2){
-				if(strlen(msg.client_id) > 16)
-					msg.client_id[16] = '\0';
+			strcpy(reply, "Aliens updated");
+			zmq_send(socket_client, reply, strlen(reply)+1, 0);
 
-				if(handle_astronaut_zap(my_win, client_data, msg.client_id, bad_guys) == -1){
-					strcpy(reply, "Can't zapp rn.");
-					zmq_send(socket_client, reply, strlen(reply)+1, 0);
-				} else {
-					strcpy(reply, "Enemy zapped!");
-					zmq_send(socket_client, reply, strlen(reply)+1, 0);
-				}
-			}
+			if(!strcmp(msg.client_id, child_id)){
+				for(int i = 0; i < ENEMY_NUMBER; i++){
+					if(bad_guys[i].life == 1){
+						//delete previous	
+						wmove(my_win, bad_guys[i].pos_x, bad_guys[i].pos_y);
+						waddch(my_win,' ');
 
-			if(msg.msg_type == 3){
-				if(strlen(m.client_id) > 16)
-					msg.client_id[16] = '\0';
+						bad_guys[i].pos_x = msg.value.vect[i].pos_x ;
+						bad_guys[i].pos_y  = msg.value.vect[i].pos_y ;
 
-				handle_astronaut_not_zap(my_win, client_data, msg.client_id);
-
-				strcpy(reply, "Tu vais morrer!");
-				zmq_send(socket_client, reply, strlen(reply) + 1, 0);
-			}
-
-			if(msg.msg_type == 4){
-				if(strlen(m.client_id) > 16)
-					msg.client_id[16] = '\0';
-				
-				for(int j = 0; j < 8; j++){
-					if(!strcmp(client_data[j]->client_id, msg.client_id)){
-						client_data[j]->stunned = 0;
-						break;
+						//right new alien and update
+						wmove(my_win, msg.value.vect[i].pos_x, msg.value.vect[i].pos_y);
+						waddch(my_win,'*');
 					}
 				}
-
-				strcpy(reply, "No longer stunned");
-				zmq_send(socket_client, reply, strlen(reply) + 1, 0);
-
 			}
-				
-	    	if(msg.msg_type == 5){
-
-				if(strlen(msg.client_id) > 16)
-					msg.client_id[16] = '\0';
-
-				strcpy(reply, "Aliens updated");
-				zmq_send(socket_client, reply, strlen(reply)+1, 0);
-
-	    		if(!strcmp(msg.client_id, child_id)){
-	    			for(int i = 0; i < ENEMY_NUMBER; i++){
-	    				if(bad_guys[i].life == 1){
-							//delete previous	
-							wmove(my_win, bad_guys[i].pos_x, bad_guys[i].pos_y);
-							waddch(my_win,' ');
-
-							bad_guys[i].pos_x = msg.value.vect[i].pos_x ;
-							bad_guys[i].pos_y  = msg.value.vect[i].pos_y ;
-
-							//right new alien and update
-							wmove(my_win, msg.value.vect[i].pos_x, msg.value.vect[i].pos_y);
-							waddch(my_win,'*');
-	    				}
-	    			}
-	    		}
-	    		else{
-	    			printf("We detected an unallowed attemped to manipulate the aliens\n");
-	    			exit(1);
-	    		}
-	    	}
-
-			/* draw mark on new position */
-			wrefresh(my_win);
-
-			// print out points
-			update_points_display(points, client_data);
-			wrefresh(points);
+			else{
+				printf("We detected an unallowed attemped to manipulate the aliens\n");
+				exit(1);
+			}
 		}
-		endwin();			/* End curses mode		  */
-		zmq_close(socket_client);
-		zmq_close(socket_display);
-		zmq_ctx_destroy(context);
 
-		return 0;
+		/* draw mark on new position */
+		wrefresh(my_win);
+
+		// print out points
+		update_points_display(points, client_data);
+		wrefresh(points);
 	}
+	endwin();			/* End curses mode		  */
+	zmq_close(socket_client);
+	zmq_close(socket_display);
+	zmq_ctx_destroy(context);
+
+	return 0;
 }

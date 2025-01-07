@@ -1,6 +1,7 @@
 #ifndef AUX_H
 #define AUX_H
 
+#include <pthread.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,6 +9,7 @@
 
 #define WINDOW_SIZE 20
 #define ENEMY_NUMBER 8
+
 
 typedef enum direction_t {UP, DOWN, LEFT, RIGHT} direction_t;
 
