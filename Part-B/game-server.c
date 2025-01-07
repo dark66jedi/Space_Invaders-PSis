@@ -11,6 +11,9 @@
 #include "LinkedList.h"
 
 #define WINDOW_SIZE 20
+WINDOW * my_win;
+WINDOW * points;
+void *socket_display;
 
 void serialize_window(WINDOW *win, char *buffer) {
     int idx = 0;
@@ -21,9 +24,33 @@ void serialize_window(WINDOW *win, char *buffer) {
     }
 }
 
+void *window_thread(void *){
+	while(1){
+		sleep(1);
+		char win_buffer[WINDOW_SIZE * WINDOW_SIZE];
+		serialize_window(my_win, win_buffer);
+		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
+
+		serialize_window(points, win_buffer);
+		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
+
+		/* draw mark on new position */
+		wrefresh(my_win);
+
+		// print out points
+		wrefresh(points);
+	}
+
+	
+}
+
 void *alien_thread(alien *bad_guy){
 	while(bad_guy->life == 1){
 		sleep(1);
+		//delete previous	
+		wmove(my_win, bad_guy->pos_x, bad_guy->pos_y);
+		waddch(my_win,' ');
+
 		//update aliens
 		switch(bad_guy->movement){
 			case UP:
@@ -49,6 +76,10 @@ void *alien_thread(alien *bad_guy){
 		}
 
 		bad_guy->movement = rand() %4;
+
+		//right new alien and update
+		wmove(my_win, bad_guy->pos_x, bad_guy->pos_y);
+		waddch(my_win,'*');
 	}
 }
 
@@ -115,26 +146,23 @@ int main()
 	noecho();
 
 	/* creates a window and draws a border */
-	WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
+	my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
 	box(my_win, 0 , 0);	
 	wrefresh(my_win);
 
-	WINDOW * points = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 25);
+	points = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 25);
 	box(points, 0 , 0);	
 	wrefresh(points);
 
 	int client_idx;
 	char reply[256];
 	int delete_pos_x, delete_pos_y;
+
+	pthread_t *window_th;
+	pthread_create(window_th, NULL, window_thread, NULL);
+
 	while (1)
 	{
-		// send to display
-		char win_buffer[WINDOW_SIZE * WINDOW_SIZE];
-		serialize_window(my_win, win_buffer);
-		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
-
-		serialize_window(points, win_buffer);
-		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
 
 		zmq_recv(socket_client, &msg, sizeof(msg), 0);
 
@@ -244,42 +272,7 @@ int main()
 
 		}
 
-		if(msg.msg_type == 5){
-
-			if(strlen(msg.client_id) > 16)
-				msg.client_id[16] = '\0';
-
-			strcpy(reply, "Aliens updated");
-			zmq_send(socket_client, reply, strlen(reply)+1, 0);
-
-			if(!strcmp(msg.client_id, child_id)){
-				for(int i = 0; i < ENEMY_NUMBER; i++){
-					if(bad_guys[i].life == 1){
-						//delete previous	
-						wmove(my_win, bad_guys[i].pos_x, bad_guys[i].pos_y);
-						waddch(my_win,' ');
-
-						bad_guys[i].pos_x = msg.value.vect[i].pos_x ;
-						bad_guys[i].pos_y  = msg.value.vect[i].pos_y ;
-
-						//right new alien and update
-						wmove(my_win, msg.value.vect[i].pos_x, msg.value.vect[i].pos_y);
-						waddch(my_win,'*');
-					}
-				}
-			}
-			else{
-				printf("We detected an unallowed attemped to manipulate the aliens\n");
-				exit(1);
-			}
-		}
-
-		/* draw mark on new position */
-		wrefresh(my_win);
-
-		// print out points
 		update_points_display(points, client_data);
-		wrefresh(points);
 	}
 	endwin();			/* End curses mode		  */
 	zmq_close(socket_client);
