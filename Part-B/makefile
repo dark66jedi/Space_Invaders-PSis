@@ -58,7 +58,7 @@ message_handler.o: message_handler.c message_handler.h aux_global.h
 aux_functions.o: aux_functions.c aux_global.h 
 	$(CC) $(CFLAGS) -c aux_functions.c
 
-LinkedList.o: LinkedList.c LinkedList.h defs.h
+LinkedList.o: LinkedList.c LinkedList.h 
 	$(CC) -c $(CFLAGS) LinkedList.c
 
 # Clean up build files

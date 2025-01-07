@@ -14,6 +14,7 @@
 WINDOW * my_win;
 WINDOW * points;
 void *socket_display;
+LinkedList *bad_guys;
 
 void serialize_window(WINDOW *win, char *buffer) {
     int idx = 0;
@@ -22,6 +23,24 @@ void serialize_window(WINDOW *win, char *buffer) {
             buffer[idx++] = mvwinch(win, y, x) & A_CHARTEXT; // Get character only
         }
     }
+}
+
+void draw_aliens(){
+	LinkedList *head = bad_guys;
+	
+	while(head != NULL){
+		alien *bad_guy = getItemLinkedList(head);
+
+		//right new alien and update
+		wmove(my_win, bad_guy->pos_x, bad_guy->pos_y);
+		waddch(my_win,'*');
+
+		head = getNextNodeLinkedList(head);
+	}
+}
+
+void draw_players(){
+
 }
 
 void *window_thread(void *){
@@ -33,6 +52,11 @@ void *window_thread(void *){
 
 		serialize_window(points, win_buffer);
 		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
+		
+		werase(my_win);
+		box(my_win, 0 , 0);	
+		draw_aliens();
+		draw_players();
 
 		/* draw mark on new position */
 		wrefresh(my_win);
@@ -40,16 +64,11 @@ void *window_thread(void *){
 		// print out points
 		wrefresh(points);
 	}
-
-	
 }
 
 void *alien_thread(alien *bad_guy){
 	while(bad_guy->life == 1){
 		sleep(1);
-		//delete previous	
-		wmove(my_win, bad_guy->pos_x, bad_guy->pos_y);
-		waddch(my_win,' ');
 
 		//update aliens
 		switch(bad_guy->movement){
@@ -77,9 +96,6 @@ void *alien_thread(alien *bad_guy){
 
 		bad_guy->movement = rand() %4;
 
-		//right new alien and update
-		wmove(my_win, bad_guy->pos_x, bad_guy->pos_y);
-		waddch(my_win,'*');
 	}
 }
 
@@ -113,14 +129,14 @@ int main()
 	
 	//Initial aliens and threads
 	
-	LinkedList *bad_guys = initLinkedList();
+	bad_guys = initLinkedList();
 	LinkedList *alien_th = initLinkedList();
 
 	for(int i = 0; i < ENEMY_NUMBER; i++){
 		alien *bad_guy = (alien *) malloc(sizeof(alien));
 		pthread_t *thread = (pthread_t *) malloc(sizeof(pthread_t));
 
-		bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
+bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
 		bad_guy->pos_y = (rand() % (WINDOW_SIZE-6)) + 3;
 		bad_guy->movement = rand() % 4;
 		bad_guy->life = 1;
@@ -158,8 +174,8 @@ int main()
 	char reply[256];
 	int delete_pos_x, delete_pos_y;
 
-	pthread_t *window_th;
-	pthread_create(window_th, NULL, window_thread, NULL);
+	pthread_t window_th;
+	pthread_create(&window_th, NULL, window_thread, NULL);
 
 	while (1)
 	{
@@ -237,7 +253,7 @@ int main()
 			if(strlen(msg.client_id) > 16)
 				msg.client_id[16] = '\0';
 
-			if(handle_astronaut_zap(my_win, client_data, msg.client_id, bad_guys) == -1){
+			if(handle_astronaut_zap(my_win, client_data, msg.client_id, (alien *) bad_guys) == -1){
 				strcpy(reply, "Can't zapp rn.");
 				zmq_send(socket_client, reply, strlen(reply)+1, 0);
 			} else {
