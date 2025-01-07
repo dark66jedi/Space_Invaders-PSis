@@ -14,6 +14,7 @@
 WINDOW * my_win;
 WINDOW * points;
 void *socket_display;
+client_info *client_data[8]; // Array of pointers to client_info
 LinkedList *bad_guys;
 
 void serialize_window(WINDOW *win, char *buffer) {
@@ -40,7 +41,16 @@ void draw_aliens(){
 }
 
 void draw_players(){
-
+	for (int i = 0; i < 8; i++)
+	{
+		if ((client_data[i]->pos_x != -1) && (client_data[i]->pos_y != -1))
+		{
+			wmove(my_win, client_data[i]->pos_x, client_data[i]->pos_y);
+			waddch(my_win,client_data[i]->ch);
+		}
+		
+	}
+	
 }
 
 void *window_thread(void *){
@@ -102,8 +112,6 @@ void *alien_thread(alien *bad_guy){
 int main()
 {	
 
-	//STEP 2
-	client_info *client_data[8]; // Array of pointers to client_info
 	int check_init;
 	check_init = init_client_array(client_data);
 	if (check_init == -1){
