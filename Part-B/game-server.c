@@ -111,6 +111,9 @@ int main()
 		void *socket_display = zmq_socket(context, ZMQ_PUB);
 		zmq_bind(socket_display, "tcp://*:5556"); // Bind to TCP port 5556
 
+		void *socket_score = zmq_socket(context, ZMQ_PUB);
+		zmq_bind(socket_score, "tcp://*:5557"); // Bind to TCP port 5556
+
 		//curses init
 		initscr();
 		cbreak();
