@@ -54,22 +54,25 @@ void draw_players(){
 }
 
 void *window_thread(void *){
-	while(1){
-		char win_buffer[WINDOW_SIZE * WINDOW_SIZE];
-		serialize_window(my_win, win_buffer);
-		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
-		
+	while(1){	
+		usleep(10000);	
 		werase(my_win);
-		box(my_win, 0 , 0);	
+		box(my_win, 0 , 0);
 		draw_aliens();
 		draw_players();
-
-		/* draw mark on new position */
 		wrefresh(my_win);
 
 		/* draw points*/
+		werase(points);
+		box(points, 0 , 0);
 		update_points_display(points, client_data);
 		wrefresh(points);
+
+		char win_buffer[WINDOW_SIZE * WINDOW_SIZE];
+		serialize_window(my_win, win_buffer);
+		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
+		serialize_window(points, win_buffer);
+		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
 	}
 }
 
@@ -141,7 +144,7 @@ int main()
 		alien *bad_guy = (alien *) malloc(sizeof(alien));
 		pthread_t *thread = (pthread_t *) malloc(sizeof(pthread_t));
 
-bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
+		bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
 		bad_guy->pos_y = (rand() % (WINDOW_SIZE-6)) + 3;
 		bad_guy->movement = rand() % 4;
 		bad_guy->life = 1;
@@ -163,17 +166,13 @@ bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
 	//curses init
 	initscr();
 	cbreak();
+	// curs_set(0);
 	keypad(stdscr, TRUE);
 	noecho();
 
-	/* creates a window and draws a border */
+	/* creates windows */
 	my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
-	box(my_win, 0 , 0);	
-	wrefresh(my_win);
-
-	points = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 25);
-	box(points, 0 , 0);	
-	wrefresh(points);
+	points = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, WINDOW_SIZE+5);
 
 	int client_idx;
 	char reply[256];
@@ -212,8 +211,6 @@ bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
 				zmq_send(socket_client, reply, strlen(reply)+1, 0);
 			}else if(client_idx>=0 && client_idx<=7){
 				zmq_send(socket_client, client_data[client_idx]->client_id, strlen(client_data[client_idx]->client_id)+1, 0);
-				wmove(my_win, client_data[client_idx]->pos_x, client_data[client_idx]->pos_y);
-				waddch(my_win,client_data[client_idx]->ch| A_BOLD);
 			}else{
 				strcpy(reply, "An error occurred");
 				zmq_send(socket_client, reply, strlen(reply)+1, 0);
@@ -240,13 +237,6 @@ bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
 				// player move: update position
 				strcpy(reply, "Player moved: position updated");
 				zmq_send(socket_client, reply, strlen(reply)+1, 0);
-
-				wmove(my_win, delete_pos_x, delete_pos_y);
-				waddch(my_win,' ');
-
-				wmove(my_win, client_data[client_idx]->pos_x, client_data[client_idx]->pos_y);
-				waddch(my_win,client_data[client_idx]->ch| A_BOLD);
-
 			}
 			else{
 				// error ocurred: didnt update position
