@@ -11,11 +11,14 @@
 #include "LinkedList.h"
 
 #define WINDOW_SIZE 20
+
+void *context;
 WINDOW * my_win;
 WINDOW * points;
 void *socket_display;
 client_info *client_data[8]; // Array of pointers to client_info
 LinkedList *bad_guys;
+int running;  // used to close the server for whatever reason
 
 void serialize_window(WINDOW *win, char *buffer) {
     int idx = 0;
@@ -54,7 +57,9 @@ void draw_players(){
 }
 
 void *window_thread(void *){
-	while(1){	
+	void *socket_display = zmq_socket(context, ZMQ_PUB);
+	zmq_bind(socket_display, "tcp://*:5556"); // Bind to TCP port 5556
+	while(running){	
 		usleep(10000);	
 		werase(my_win);
 		box(my_win, 0 , 0);
@@ -73,6 +78,23 @@ void *window_thread(void *){
 		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
 		serialize_window(points, win_buffer);
 		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
+	}
+}
+
+void *closing_thread(void *){
+	while(running){	
+		int key = getch();
+
+		if(key == 'q' || key == 'Q'){
+			running = 0;
+			remote_char_t m;
+			m.msg_type = 9;
+			void *socket = zmq_socket(context, ZMQ_REQ);
+    		zmq_connect(socket, "tcp://localhost:5555");
+			zmq_send(socket, &m, sizeof(remote_char_t), 0);
+			char buffer[256];
+    		zmq_recv(socket, buffer, 255, 0);
+		}
 	}
 }
 
@@ -111,6 +133,7 @@ void *alien_thread(alien *bad_guy){
 
 int main()
 {	
+	running = 1;
 
 	int check_init;
 	check_init = init_client_array(client_data);
@@ -125,7 +148,7 @@ int main()
 	remote_char_t m;
 
 	// Create a context
-	void *context = zmq_ctx_new();
+	context = zmq_ctx_new();
 
 	// Create a REP socket
 	void *socket_client = zmq_socket(context, ZMQ_REP);
@@ -155,18 +178,13 @@ int main()
 
 	}
 
-
-
-	void *socket_display = zmq_socket(context, ZMQ_PUB);
-	zmq_bind(socket_display, "tcp://*:5556"); // Bind to TCP port 5556
-
 	void *socket_score = zmq_socket(context, ZMQ_PUB);
 	zmq_bind(socket_score, "tcp://*:5557"); // Bind to TCP port 5556
 
 	//curses init
 	initscr();
 	cbreak();
-	// curs_set(0);
+	curs_set(0);
 	keypad(stdscr, TRUE);
 	noecho();
 
@@ -178,10 +196,11 @@ int main()
 	char reply[256];
 	int delete_pos_x, delete_pos_y;
 
-	pthread_t window_th;
+	pthread_t window_th, close_th;
 	pthread_create(&window_th, NULL, window_thread, NULL);
+	pthread_create(&close_th, NULL, closing_thread, NULL);
 
-	while (1)
+	while (running)
 	{
 
 		zmq_recv(socket_client, &msg, sizeof(msg), 0);
@@ -284,6 +303,9 @@ int main()
 		}
 
 	}
+	pthread_join(window_th, NULL);
+	pthread_join(close_th, NULL);
+	
 	endwin();			/* End curses mode		  */
 	zmq_close(socket_client);
 	zmq_close(socket_display);
