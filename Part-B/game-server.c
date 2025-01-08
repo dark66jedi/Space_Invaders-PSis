@@ -55,12 +55,8 @@ void draw_players(){
 
 void *window_thread(void *){
 	while(1){
-		sleep(1);
 		char win_buffer[WINDOW_SIZE * WINDOW_SIZE];
 		serialize_window(my_win, win_buffer);
-		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
-
-		serialize_window(points, win_buffer);
 		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
 		
 		werase(my_win);
@@ -71,7 +67,8 @@ void *window_thread(void *){
 		/* draw mark on new position */
 		wrefresh(my_win);
 
-		// print out points
+		/* draw points*/
+		update_points_display(points, client_data);
 		wrefresh(points);
 	}
 }
@@ -296,7 +293,6 @@ bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
 
 		}
 
-		update_points_display(points, client_data);
 	}
 	endwin();			/* End curses mode		  */
 	zmq_close(socket_client);
