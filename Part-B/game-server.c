@@ -32,16 +32,13 @@ void serialize_window(WINDOW *win, char *buffer) {
     }
 }
 
-void join_aliens_th(){
-	LinkedList *head = alien_th;
-	while(head != NULL){
-		pthread_t thread = (pthread_t)getItemLinkedList(head);
+void free_alien_th(pthread_t *th){
 
-		pthread_join(thread,NULL);
+	pthread_join(*th, NULL);
+	free(th);
 
-		head = getNextNodeLinkedList(head);
-	}
 }
+
 
 void draw_aliens(){
 
@@ -263,6 +260,20 @@ void *spawn_thread(void *){
 	}
 }
 
+void free_aliens(){
+	LinkedList *head = bad_guys;
+	alien *bad_guy;
+	
+	pthread_mutex_lock(&alien_lck);
+	while(head != NULL){
+		bad_guy = getItemLinkedList(head);
+		bad_guy->life = 0;
+		head = getNextNodeLinkedList(head);
+	}
+	pthread_mutex_unlock(&alien_lck);
+}
+
+
 int main()
 {	
 	running = 1;
@@ -413,7 +424,9 @@ int main()
 
 
 	}
-	join_aliens_th();
+	free_aliens();
+	freeLinkedList(alien_th,(void (*)(void *)) free_alien_th);
+	freeLinkedList(bad_guys, free);
 	pthread_join(window_th, NULL);
 	pthread_join(close_th, NULL);
 
