@@ -61,9 +61,6 @@ void *update_display_thread(void *arg)
         } else {
             // Timeout occurred, assume server is down
             keep_running = 0;
-            box(error_display, 0 , 0);
-            mvprintw(22, 0, "No response from server. Press any key\n");
-            wrefresh(error_display);
             int linger = 0;
             zmq_setsockopt(socket, ZMQ_LINGER, &linger, sizeof(linger));
             break;

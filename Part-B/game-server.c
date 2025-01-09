@@ -32,6 +32,17 @@ void serialize_window(WINDOW *win, char *buffer) {
     }
 }
 
+void join_aliens_th(){
+	LinkedList *head = alien_th;
+	while(head != NULL){
+		pthread_t thread = (pthread_t)getItemLinkedList(head);
+
+		pthread_join(thread,NULL);
+
+		head = getNextNodeLinkedList(head);
+	}
+}
+
 void draw_aliens(){
 
 	pthread_mutex_lock(&alien_lck);
@@ -157,64 +168,66 @@ void *closing_thread(void *){
 }
 
 void *alien_thread(alien *bad_guy){
-	while(bad_guy->life == 1){
-		sleep(1);
+	while(running){
+		while(bad_guy->life == 1){
+			sleep(1);
 
-		//update aliens
-		switch(bad_guy->movement){
-			case UP:
-				bad_guy->pos_y--;
-				if(bad_guy->pos_y < 3)
-					bad_guy->pos_y = 3;
-			break;
-			case DOWN:
-				bad_guy->pos_y++;
-				if(bad_guy->pos_y > 16)
-					bad_guy->pos_y = 16;
-			break;
-			case LEFT:
-				bad_guy->pos_x--;
-				if(bad_guy->pos_x < 3)
-					bad_guy->pos_x = 3;
-			break;
-			case RIGHT:
-				bad_guy->pos_x++;
-				if(bad_guy->pos_x > 16)
-					bad_guy->pos_x = 16;
-			break;
+			//update aliens
+			switch(bad_guy->movement){
+				case UP:
+					bad_guy->pos_y--;
+					if(bad_guy->pos_y < 3)
+						bad_guy->pos_y = 3;
+				break;
+				case DOWN:
+					bad_guy->pos_y++;
+					if(bad_guy->pos_y > 16)
+						bad_guy->pos_y = 16;
+				break;
+				case LEFT:
+					bad_guy->pos_x--;
+					if(bad_guy->pos_x < 3)
+						bad_guy->pos_x = 3;
+				break;
+				case RIGHT:
+					bad_guy->pos_x++;
+					if(bad_guy->pos_x > 16)
+						bad_guy->pos_x = 16;
+				break;
+			}
+
+			bad_guy->movement = rand() %4;
+
 		}
 
-		bad_guy->movement = rand() %4;
-
-	}
 
 
+		pthread_mutex_lock(&alien_lck);
+		LinkedList *head = bad_guys;
+		LinkedList *aux = head;
+		if(head != NULL){
+			if(getItemLinkedList(head) == bad_guy){
+				aux = getNextNodeLinkedList(head);
+				free(bad_guy);
+				free(head);
+				bad_guys = aux;
+				pthread_mutex_unlock(&alien_lck);
+				return NULL;
+			}
+		}
 
-	pthread_mutex_lock(&alien_lck);
-	LinkedList *head = bad_guys;
-	LinkedList *aux = head;
-	if(head != NULL){
-		if(getItemLinkedList(head) == bad_guy){
+		while(head != NULL){
 			aux = getNextNodeLinkedList(head);
-			free(bad_guy);
-			free(head);
-			bad_guys = aux;
-			pthread_mutex_unlock(&alien_lck);
-			return NULL;
-		}
-	}
+			if(aux == NULL) break;
 
-	while(head != NULL){
-		aux = getNextNodeLinkedList(head);
-		if(aux == NULL) break;
-
-		if(getItemLinkedList(aux) == bad_guy){
-			revoveFromList(head, aux, free);
-			break;
+			if(getItemLinkedList(aux) == bad_guy){
+				revoveFromList(head, aux, free);
+				break;
+			}
+			head = aux;
 		}
-		head = aux;
+		pthread_mutex_unlock(&alien_lck);
 	}
-	pthread_mutex_unlock(&alien_lck);
 	return NULL;
 }
 
@@ -297,8 +310,8 @@ int main()
 
 	}
 
-	void *socket_score = zmq_socket(context, ZMQ_PUB);
-	zmq_bind(socket_score, "tcp://*:5557"); // Bind to TCP port 5556
+	// void *socket_score = zmq_socket(context, ZMQ_PUB);
+	// zmq_bind(socket_score, "tcp://*:5557"); // Bind to TCP port 5557
 
 	//curses init
 	initscr();
@@ -327,7 +340,6 @@ int main()
 
 		// server disconnect
 		if (msg.msg_type == -2){
-			
 			zmq_send(socket_client, reply, strlen(reply)+1, 0);
 		}
 
@@ -401,11 +413,16 @@ int main()
 
 
 	}
+	join_aliens_th();
 	pthread_join(window_th, NULL);
 	pthread_join(close_th, NULL);
 
 	endwin();			/* End curses mode		  */
+
+	int linger = 0;
+    zmq_setsockopt(socket_client, ZMQ_LINGER, &linger, sizeof(linger));
 	zmq_close(socket_client);
+	zmq_setsockopt(socket_display, ZMQ_LINGER, &linger, sizeof(linger));
 	zmq_close(socket_display);
 	zmq_ctx_destroy(context);
 
