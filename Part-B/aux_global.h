@@ -6,10 +6,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ncurses.h>
+#include "LinkedList.h"
+
 
 #define WINDOW_SIZE 20
 #define ENEMY_NUMBER 8
 
+
+extern void *context;
+extern WINDOW * my_win;
+extern WINDOW * points;
+extern LinkedList *bad_guys;
 
 typedef enum direction_t {UP, DOWN, LEFT, RIGHT} direction_t;
 
@@ -20,10 +27,13 @@ typedef struct client_info
     int movement; // if 0 vertical, if 1 horizontal
     char *client_id;
 	int zap_x, zap_y;
+	int view_zap;
 	int points;
 	int stunned;
 } client_info;
 
+extern client_info *client_data[8]; // Array of pointers to client_info
+									
 typedef struct alien{
 	int pos_x, pos_y;
 	direction_t movement;

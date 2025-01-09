@@ -56,6 +56,56 @@ void draw_players(){
 	
 }
 
+void draw_zap(){
+
+	for(int i = 0; i < 8; i++){
+		if(client_data[i]->view_zap == 1){
+			int pos_x = client_data[i]->zap_x;
+			int pos_y = client_data[i]->zap_y;
+
+			if(client_data[i]->movement == 0 && pos_y > WINDOW_SIZE/2){
+				//Está à direita
+				while(pos_y > 1){
+					pos_y--;
+					char a = mvwinch(my_win, pos_x, pos_y);
+					if(a == ' ')
+						waddch(my_win,'-');
+				}
+			}
+			else if(client_data[i]->movement == 0 && pos_y < WINDOW_SIZE/2){
+				//Está à esquerda
+				while(pos_y  < WINDOW_SIZE){
+					pos_y++;
+					char a = mvwinch(my_win, pos_x, pos_y);
+					if(a == ' ')
+						waddch(my_win,'-');
+				}
+			}
+
+			else if(client_data[i]->movement == 1 && pos_x < WINDOW_SIZE/2){
+				//Está em cima
+
+				while(pos_x  < WINDOW_SIZE){
+					pos_x++;
+					char a = mvwinch(my_win, pos_x, pos_y);
+					if(a == ' ')
+						waddch(my_win,'|');
+				}
+			}
+
+			else if(client_data[i]->movement == 1 && pos_x > WINDOW_SIZE/2){
+				//Está em baixo
+				while(pos_x  > 1){
+					pos_x--;
+					char a = mvwinch(my_win, pos_x, pos_y);
+					if(a == ' ')
+						waddch(my_win,'|');
+				}
+			}
+		}
+	}
+}
+
 void *window_thread(void *){
 	void *socket_display = zmq_socket(context, ZMQ_PUB);
 	zmq_bind(socket_display, "tcp://*:5556"); // Bind to TCP port 5556
@@ -65,6 +115,7 @@ void *window_thread(void *){
 		box(my_win, 0 , 0);
 		draw_aliens();
 		draw_players();
+		draw_zap();
 		wrefresh(my_win);
 
 		/* draw points*/
@@ -267,40 +318,12 @@ int main()
 			if(strlen(msg.client_id) > 16)
 				msg.client_id[16] = '\0';
 
-			if(handle_astronaut_zap(my_win, client_data, msg.client_id, (alien *) bad_guys) == -1){
-				strcpy(reply, "Can't zapp rn.");
-				zmq_send(socket_client, reply, strlen(reply)+1, 0);
-			} else {
-				strcpy(reply, "Enemy zapped!");
-				zmq_send(socket_client, reply, strlen(reply)+1, 0);
-			}
+			pthread_t zap_th;
+			pthread_create(&zap_th, NULL, (void *(*)(void*)) handle_astronaut_zap, msg.client_id);
+			strcpy(reply, "Enemy zapped!");
+			zmq_send(socket_client, reply, strlen(reply)+1, 0);
 		}
 
-		if(msg.msg_type == 3){
-			if(strlen(m.client_id) > 16)
-				msg.client_id[16] = '\0';
-
-			handle_astronaut_not_zap(my_win, client_data, msg.client_id);
-
-			strcpy(reply, "Tu vais morrer!");
-			zmq_send(socket_client, reply, strlen(reply) + 1, 0);
-		}
-
-		if(msg.msg_type == 4){
-			if(strlen(m.client_id) > 16)
-				msg.client_id[16] = '\0';
-
-			for(int j = 0; j < 8; j++){
-				if(!strcmp(client_data[j]->client_id, msg.client_id)){
-					client_data[j]->stunned = 0;
-					break;
-				}
-			}
-
-			strcpy(reply, "No longer stunned");
-			zmq_send(socket_client, reply, strlen(reply) + 1, 0);
-
-		}
 
 	}
 	pthread_join(window_th, NULL);
