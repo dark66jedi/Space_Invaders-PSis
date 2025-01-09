@@ -143,10 +143,10 @@ void *closing_thread(void *){
 	while(running){	
 		int key = getch();
 
-		if(key == 'q' || key == 'Q'){
+		if(key == 'Q'){
 			running = 0;
 			remote_char_t m;
-			m.msg_type = 9;
+			m.msg_type = -2; // message type to stop server
 			void *socket = zmq_socket(context, ZMQ_REQ);
     		zmq_connect(socket, "tcp://localhost:5555");
 			zmq_send(socket, &m, sizeof(remote_char_t), 0);
@@ -325,6 +325,12 @@ int main()
 
 		zmq_recv(socket_client, &msg, sizeof(msg), 0);
 
+		// server disconnect
+		if (msg.msg_type == -2){
+			
+			zmq_send(socket_client, reply, strlen(reply)+1, 0);
+		}
+
 		// astronaut_disconnect
 		if (msg.msg_type == -1){
 			if(strlen(msg.client_id) > 16)
@@ -397,7 +403,7 @@ int main()
 	}
 	pthread_join(window_th, NULL);
 	pthread_join(close_th, NULL);
-	
+
 	endwin();			/* End curses mode		  */
 	zmq_close(socket_client);
 	zmq_close(socket_display);
