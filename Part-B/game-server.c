@@ -18,7 +18,10 @@ WINDOW * points;
 void *socket_display;
 client_info *client_data[8]; // Array of pointers to client_info
 LinkedList *bad_guys;
+LinkedList *alien_th; 
 int running;  // used to close the server for whatever reason
+pthread_mutex_t alien_lck = PTHREAD_MUTEX_INITIALIZER;
+
 
 void serialize_window(WINDOW *win, char *buffer) {
     int idx = 0;
@@ -30,17 +33,21 @@ void serialize_window(WINDOW *win, char *buffer) {
 }
 
 void draw_aliens(){
+
+	pthread_mutex_lock(&alien_lck);
 	LinkedList *head = bad_guys;
-	
 	while(head != NULL){
 		alien *bad_guy = getItemLinkedList(head);
 
 		//right new alien and update
-		wmove(my_win, bad_guy->pos_x, bad_guy->pos_y);
-		waddch(my_win,'*');
+		if(bad_guy->life == 1){
+			wmove(my_win, bad_guy->pos_x, bad_guy->pos_y);
+			waddch(my_win,'*');
+		}
 
 		head = getNextNodeLinkedList(head);
 	}
+	pthread_mutex_unlock(&alien_lck);
 }
 
 void draw_players(){
@@ -180,6 +187,67 @@ void *alien_thread(alien *bad_guy){
 		bad_guy->movement = rand() %4;
 
 	}
+
+
+
+	pthread_mutex_lock(&alien_lck);
+	LinkedList *head = bad_guys;
+	LinkedList *aux = head;
+	if(head != NULL){
+		if(getItemLinkedList(head) == bad_guy){
+			aux = getNextNodeLinkedList(head);
+			free(bad_guy);
+			free(head);
+			bad_guys = aux;
+			pthread_mutex_unlock(&alien_lck);
+			return NULL;
+		}
+	}
+
+	while(head != NULL){
+		aux = getNextNodeLinkedList(head);
+		if(aux == NULL) break;
+
+		if(getItemLinkedList(aux) == bad_guy){
+			revoveFromList(head, aux, free);
+			break;
+		}
+		head = aux;
+	}
+	pthread_mutex_unlock(&alien_lck);
+	return NULL;
+}
+
+void *spawn_thread(void *){
+	pthread_mutex_lock(&alien_lck);
+	int n = lengthLinkedList(bad_guys);
+	pthread_mutex_unlock(&alien_lck);
+	int m = n;
+	while(running){
+		sleep(10);
+		pthread_mutex_lock(&alien_lck);
+		n = lengthLinkedList(bad_guys);
+		pthread_mutex_unlock(&alien_lck);
+		if(n == m){
+			for (float i = m*0.1f; i > 0; i--){
+				alien *bad_guy = (alien *) malloc(sizeof(alien));
+				pthread_t *thread = (pthread_t *) malloc(sizeof(pthread_t));
+
+				bad_guy->pos_x = (rand() % (WINDOW_SIZE-6)) + 3;
+				bad_guy->pos_y = (rand() % (WINDOW_SIZE-6)) + 3;
+				bad_guy->movement = rand() % 4;
+				bad_guy->life = 1;
+
+				pthread_create(thread, NULL, (void *(*)(void*)) alien_thread, bad_guy);
+				pthread_mutex_lock(&alien_lck);
+				bad_guys = insertUnsortedLinkedList(bad_guys, (Item) bad_guy);
+				n = lengthLinkedList(bad_guys);
+				alien_th = insertUnsortedLinkedList(alien_th, (Item) thread);
+				pthread_mutex_unlock(&alien_lck);
+			}
+		}
+		m=n;
+	}
 }
 
 int main()
@@ -212,7 +280,7 @@ int main()
 	//Initial aliens and threads
 	
 	bad_guys = initLinkedList();
-	LinkedList *alien_th = initLinkedList();
+	alien_th = initLinkedList();
 
 	for(int i = 0; i < ENEMY_NUMBER; i++){
 		alien *bad_guy = (alien *) malloc(sizeof(alien));
@@ -247,9 +315,10 @@ int main()
 	char reply[256];
 	int delete_pos_x, delete_pos_y;
 
-	pthread_t window_th, close_th;
+	pthread_t window_th, close_th, spawn_th;
 	pthread_create(&window_th, NULL, window_thread, NULL);
 	pthread_create(&close_th, NULL, closing_thread, NULL);
+	pthread_create(&spawn_th, NULL, spawn_thread, NULL);
 
 	while (running)
 	{

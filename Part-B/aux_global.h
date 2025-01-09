@@ -10,7 +10,7 @@
 
 
 #define WINDOW_SIZE 20
-#define ENEMY_NUMBER 8
+#define ENEMY_NUMBER 85
 
 
 extern void *context;
