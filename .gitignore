@@ -11,6 +11,7 @@
 !README.md
 !PSIS-*
 !*.py
+!*.proto
 
 # editor directories
 .vscode
