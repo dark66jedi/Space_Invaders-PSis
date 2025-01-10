@@ -16,7 +16,6 @@ PROTOBUF_C__BEGIN_DECLS
 
 
 typedef struct _AstronautScore AstronautScore;
-typedef struct _AstronautScores AstronautScores;
 
 
 /* --- enums --- */
@@ -27,23 +26,12 @@ typedef struct _AstronautScores AstronautScores;
 struct  _AstronautScore
 {
   ProtobufCMessage base;
-  char *name;
+  char *ch;
   int32_t score;
 };
 #define ASTRONAUT_SCORE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&astronaut_score__descriptor) \
     , (char *)protobuf_c_empty_string, 0 }
-
-
-struct  _AstronautScores
-{
-  ProtobufCMessage base;
-  size_t n_scores;
-  AstronautScore **scores;
-};
-#define ASTRONAUT_SCORES__INIT \
- { PROTOBUF_C_MESSAGE_INIT (&astronaut_scores__descriptor) \
-    , 0,NULL }
 
 
 /* AstronautScore methods */
@@ -65,32 +53,10 @@ AstronautScore *
 void   astronaut_score__free_unpacked
                      (AstronautScore *message,
                       ProtobufCAllocator *allocator);
-/* AstronautScores methods */
-void   astronaut_scores__init
-                     (AstronautScores         *message);
-size_t astronaut_scores__get_packed_size
-                     (const AstronautScores   *message);
-size_t astronaut_scores__pack
-                     (const AstronautScores   *message,
-                      uint8_t             *out);
-size_t astronaut_scores__pack_to_buffer
-                     (const AstronautScores   *message,
-                      ProtobufCBuffer     *buffer);
-AstronautScores *
-       astronaut_scores__unpack
-                     (ProtobufCAllocator  *allocator,
-                      size_t               len,
-                      const uint8_t       *data);
-void   astronaut_scores__free_unpacked
-                     (AstronautScores *message,
-                      ProtobufCAllocator *allocator);
 /* --- per-message closures --- */
 
 typedef void (*AstronautScore_Closure)
                  (const AstronautScore *message,
-                  void *closure_data);
-typedef void (*AstronautScores_Closure)
-                 (const AstronautScores *message,
                   void *closure_data);
 
 /* --- services --- */
@@ -99,7 +65,6 @@ typedef void (*AstronautScores_Closure)
 /* --- descriptors --- */
 
 extern const ProtobufCMessageDescriptor astronaut_score__descriptor;
-extern const ProtobufCMessageDescriptor astronaut_scores__descriptor;
 
 PROTOBUF_C__END_DECLS
 

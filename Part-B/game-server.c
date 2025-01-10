@@ -15,7 +15,6 @@
 void *context;
 WINDOW * my_win;
 WINDOW * points;
-void *socket_display;
 client_info *client_data[8]; // Array of pointers to client_info
 LinkedList *bad_guys;
 LinkedList *alien_th; 
@@ -145,9 +144,48 @@ void *window_thread(void *){
 		serialize_window(points, win_buffer);
 		zmq_send(socket_display, &win_buffer, sizeof(win_buffer), 0);
 	}
+	zmq_close(socket_display);
+}
+
+void* send_score_update(){
+
+	// create a socket to send the score serialized with proto
+	void *socket_score = zmq_socket(context, ZMQ_PUB);
+	zmq_bind(socket_score, "tcp://*:5557"); // Bind to TCP port 5557
+	
+	while(running){
+		for(int i = 0; i<8 ; i++){
+			if (strcmp(client_data[i]->client_id,"----------------")){
+				usleep(100000);
+				AstronautScore new_score = ASTRONAUT_SCORE__INIT;
+
+				// new_score.ch.data = malloc(2*sizeof(char));
+				char string__[2];
+				sprintf(string__, "%c", client_data[i]->ch);
+				new_score.ch = strdup(string__);
+				new_score.score = client_data[i]->points;
+
+				// Serialize the Protobuf message
+				size_t packed_size = astronaut_score__get_packed_size(&new_score);
+				char *buffer = malloc(packed_size);
+				astronaut_score__pack(&new_score, buffer);
+
+				
+				zmq_send(socket_score, buffer, packed_size, 0);
+
+				free(buffer);
+			}
+		}
+	}
+	
+	zmq_close(socket_score);
+
+	return NULL;
 }
 
 void *closing_thread(void *){
+	void *socket = zmq_socket(context, ZMQ_REQ);
+    zmq_connect(socket, "tcp://localhost:5555");
 	while(running){	
 		int key = getch();
 
@@ -155,13 +193,13 @@ void *closing_thread(void *){
 			running = 0;
 			remote_char_t m;
 			m.msg_type = -2; // message type to stop server
-			void *socket = zmq_socket(context, ZMQ_REQ);
-    		zmq_connect(socket, "tcp://localhost:5555");
+			
 			zmq_send(socket, &m, sizeof(remote_char_t), 0);
 			char buffer[256];
     		zmq_recv(socket, buffer, 255, 0);
 		}
 	}
+	zmq_close(socket);
 }
 
 void *alien_thread(alien *bad_guy){
@@ -321,9 +359,6 @@ int main()
 
 	}
 
-	// void *socket_score = zmq_socket(context, ZMQ_PUB);
-	// zmq_bind(socket_score, "tcp://*:5557"); // Bind to TCP port 5557
-
 	//curses init
 	initscr();
 	cbreak();
@@ -339,10 +374,11 @@ int main()
 	char reply[256];
 	int delete_pos_x, delete_pos_y;
 
-	pthread_t window_th, close_th, spawn_th;
+	pthread_t window_th, close_th, spawn_th, update_score_th;
 	pthread_create(&window_th, NULL, window_thread, NULL);
 	pthread_create(&close_th, NULL, closing_thread, NULL);
 	pthread_create(&spawn_th, NULL, spawn_thread, NULL);
+	pthread_create(&update_score_th, NULL, send_score_update, NULL);
 
 	while (running)
 	{
@@ -384,6 +420,7 @@ int main()
 				zmq_send(socket_client, reply, strlen(reply)+1, 0);
 			}
 		}
+		// astronaut movement
 		if(msg.msg_type == 1){
 			direction_t direction = msg.value.direction;
 			if(strlen(msg.client_id) > 16)
@@ -412,6 +449,7 @@ int main()
 				zmq_send(socket_client, reply, strlen(reply)+1, 0);
 			}
 		}
+		// astronaut zap
 		if(msg.msg_type == 2){
 			if(strlen(msg.client_id) > 16)
 				msg.client_id[16] = '\0';
@@ -427,16 +465,16 @@ int main()
 	free_aliens();
 	freeLinkedList(alien_th,(void (*)(void *)) free_alien_th);
 	freeLinkedList(bad_guys, free);
-	pthread_join(window_th, NULL);
+
+	pthread_join(update_score_th, NULL);
+	pthread_join(spawn_th, NULL);
 	pthread_join(close_th, NULL);
+	pthread_join(window_th, NULL);
+	
 
 	endwin();			/* End curses mode		  */
 
-	int linger = 0;
-    zmq_setsockopt(socket_client, ZMQ_LINGER, &linger, sizeof(linger));
 	zmq_close(socket_client);
-	zmq_setsockopt(socket_display, ZMQ_LINGER, &linger, sizeof(linger));
-	zmq_close(socket_display);
 	zmq_ctx_destroy(context);
 
 	return 0;

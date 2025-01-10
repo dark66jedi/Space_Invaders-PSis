@@ -1,16 +1,16 @@
 # Variables
 CC = gcc
 CFLAGS = -g
-LIBS = -lncurses -lzmq
+LIBS = -lncurses -lzmq -lprotobuf-c
 
 # Source files
-SRCS1 = game-server.c message_handler.h aux_global.h
+SRCS1 = game-server.c message_handler.h aux_global.h scores.pb-c.h
 SRCS2 = astronaut-client.c aux_global.h
 SRCS3 = outer-space-display.c aux_global.h
 SRCS4 = astronaut-display-client.c aux_global.h
 
 # Object files
-OBJS1 = game-server.o message_handler.o aux_functions.o LinkedList.o
+OBJS1 = game-server.o message_handler.o aux_functions.o LinkedList.o scores.pb-c.o
 OBJS2 = astronaut-client.o aux_functions.o
 OBJS3 = outer-space-display.o aux_functions.o
 OBJS4 = astronaut-display-client.o aux_functions.o
@@ -40,7 +40,7 @@ $(EXE4): $(OBJS4)
 	$(CC) $(CFLAGS) -o $(EXE4) $(OBJS4) $(LIBS)
 
 # Rule to compile object files
-game-server.o: game-server.c aux_global.h message_handler.h
+game-server.o: game-server.c aux_global.h message_handler.h scores.pb-c.h
 	$(CC) $(CFLAGS) -c game-server.c
 
 astronaut-client.o: astronaut-client.c aux_global.h
@@ -60,6 +60,9 @@ aux_functions.o: aux_functions.c aux_global.h
 
 LinkedList.o: LinkedList.c LinkedList.h 
 	$(CC) -c $(CFLAGS) LinkedList.c
+
+scores.pb-c.o: scores.pb-c.c scores.pb-c.h 
+	$(CC) -c $(CFLAGS) scores.pb-c.c
 
 # Clean up build files
 clean:

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <ncurses.h>
 #include "LinkedList.h"
+#include "scores.pb-c.h"
 
 
 #define WINDOW_SIZE 20

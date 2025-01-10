@@ -79,6 +79,7 @@ int handle_astronaut_disconnect(client_info *client_data[], int *n_players, char
             (*pos_y) = client_data[i]->pos_y;
             client_data[i]->pos_x = -1;
             client_data[i]->pos_y = -1;
+			client_data[i]->points = 0;
 
             (*n_players)--;
             return 1;
@@ -245,6 +246,7 @@ void handle_astronaut_zap(char *client_id){
 			break;
 		}
     }
+	
 	return;
 }
 
@@ -302,7 +304,4 @@ void handle_astronaut_not_zap(WINDOW *win, client_info *client_data[], char *cli
 
 		}
     }
-}
-void check_if_client_exists(){
-
 }

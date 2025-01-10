@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0cscores.proto\"-\n\x0e\x41stronautScore\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05score\x18\x02 \x01(\x05\"2\n\x0f\x41stronautScores\x12\x1f\n\x06scores\x18\x01 \x03(\x0b\x32\x0f.AstronautScoreb\x06proto3'
+  serialized_pb=b'\n\x0cscores.proto\"+\n\x0e\x41stronautScore\x12\n\n\x02\x63h\x18\x01 \x01(\t\x12\r\n\x05score\x18\x02 \x01(\x05\x62\x06proto3'
 )
 
 
@@ -34,7 +34,7 @@ _ASTRONAUTSCORE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='AstronautScore.name', index=0,
+      name='ch', full_name='AstronautScore.ch', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -60,44 +60,10 @@ _ASTRONAUTSCORE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=16,
-  serialized_end=61,
+  serialized_end=59,
 )
 
-
-_ASTRONAUTSCORES = _descriptor.Descriptor(
-  name='AstronautScores',
-  full_name='AstronautScores',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='scores', full_name='AstronautScores.scores', index=0,
-      number=1, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=63,
-  serialized_end=113,
-)
-
-_ASTRONAUTSCORES.fields_by_name['scores'].message_type = _ASTRONAUTSCORE
 DESCRIPTOR.message_types_by_name['AstronautScore'] = _ASTRONAUTSCORE
-DESCRIPTOR.message_types_by_name['AstronautScores'] = _ASTRONAUTSCORES
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 AstronautScore = _reflection.GeneratedProtocolMessageType('AstronautScore', (_message.Message,), {
@@ -106,13 +72,6 @@ AstronautScore = _reflection.GeneratedProtocolMessageType('AstronautScore', (_me
   # @@protoc_insertion_point(class_scope:AstronautScore)
   })
 _sym_db.RegisterMessage(AstronautScore)
-
-AstronautScores = _reflection.GeneratedProtocolMessageType('AstronautScores', (_message.Message,), {
-  'DESCRIPTOR' : _ASTRONAUTSCORES,
-  '__module__' : 'scores_pb2'
-  # @@protoc_insertion_point(class_scope:AstronautScores)
-  })
-_sym_db.RegisterMessage(AstronautScores)
 
 
 # @@protoc_insertion_point(module_scope)

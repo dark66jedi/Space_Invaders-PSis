@@ -1,43 +1,55 @@
-import curses
 import zmq
-import scores_pb2 as proto
+import curses
+import scores_pb2  # Import the generated Protobuf module
 
-def main(stdscr):
-    # ZMQ setup
+def receive_score_update(stdscr):
+    # Initialize curses settings
+    curses.curs_set(0)  # Hide the cursor
+    stdscr.clear()
+
+    # Set up ZeroMQ subscriber
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
-    socket.connect("tcp://localhost:5557")  # Replace with your server's address
-    socket.setsockopt_string(zmq.SUBSCRIBE, "")  # Subscribe to all messages
+    socket.connect("tcp://localhost:5557")  # Same port as the publisher
+    socket.setsockopt_string(zmq.SUBSCRIBE, "")  # Subscribe to all topics
 
-    # Clear the screen
-    stdscr.clear()
-    stdscr.addstr(0, 0, "Waiting for AstronautScores messages...")
+    stdscr.addstr(0, 0, "Listening for updates...", curses.A_BOLD)
     stdscr.refresh()
 
+    high_scores = []
     while True:
-        try:
-            # Receive a message
-            message = socket.recv()
-            
-            # Deserialize the Protobuf message
-            scores = proto.AstronautScores()
-            scores.ParseFromString(message)
-            
-            # Clear the screen for new data
-            stdscr.clear()
-            
-            # Display the scores
-            stdscr.addstr(0, 0, "Astronaut Scores:")
-            for idx, score in enumerate(scores.scores):
-                stdscr.addstr(idx + 1, 0, f"{score.name}: {score.score}")
+        # Receive the serialized Protobuf message
+        message = socket.recv()
+        
+        # Deserialize the Protobuf message
+        new_score = scores_pb2.AstronautScore()
+        new_score.ParseFromString(message)
+        
+        # Skip if the score is invalid
+        if new_score.ch == "":
+            continue
+        
+        # Check if the astronaut already exists in high_scores
+        if not any(score["ch"] == new_score.ch for score in high_scores):
+            # Create a dictionary and append to high_scores
+            new = {"ch": new_score.ch, "score": new_score.score}
+            high_scores.append(new)
+        else:
+            # Update the score if the astronaut already exists
+            for score in high_scores:
+                if score["ch"] == new_score.ch:
+                    score["score"] = new_score.score
+                    break
 
-            # Refresh the screen to show updates
-            stdscr.refresh()
+        # Sort high_scores by score in descending order
+        high_scores.sort(key=lambda x: x["score"], reverse=True)
 
-        except Exception as e:
-            stdscr.addstr(0, 0, f"Error: {str(e)}")
-            stdscr.refresh()
-            break
+        # Display high scores using curses
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Astronaut High Scores", curses.A_BOLD | curses.A_UNDERLINE)
+        for i, score in enumerate(high_scores, start=1):
+            stdscr.addstr(i, 0, f"{i}. {score['ch']}: {score['score']}")
+        stdscr.refresh()
 
-# Run the curses application
-curses.wrapper(main)
+if __name__ == "__main__":
+    curses.wrapper(receive_score_update)
