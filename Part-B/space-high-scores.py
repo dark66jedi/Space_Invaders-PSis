@@ -1,6 +1,6 @@
 import zmq
 import curses
-import scores_pb2  # Import the generated Protobuf module
+import scores_pb2
 
 def receive_score_update(stdscr):
     # Initialize curses settings
@@ -10,22 +10,19 @@ def receive_score_update(stdscr):
     # Set up ZeroMQ subscriber
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
-    socket.connect("tcp://localhost:5557")  # Same port as the publisher
-    socket.setsockopt_string(zmq.SUBSCRIBE, "")  # Subscribe to all topics
+    socket.connect("tcp://localhost:5557")
+    socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
     stdscr.addstr(0, 0, "Listening for updates...", curses.A_BOLD)
     stdscr.refresh()
 
     high_scores = []
     while True:
-        # Receive the serialized Protobuf message
         message = socket.recv()
         
-        # Deserialize the Protobuf message
         new_score = scores_pb2.AstronautScore()
         new_score.ParseFromString(message)
         
-        # Skip if the score is invalid
         if new_score.ch == "":
             continue
         

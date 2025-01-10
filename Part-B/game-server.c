@@ -159,7 +159,6 @@ void* send_score_update(){
 				usleep(100000);
 				AstronautScore new_score = ASTRONAUT_SCORE__INIT;
 
-				// new_score.ch.data = malloc(2*sizeof(char));
 				char string__[2];
 				sprintf(string__, "%c", client_data[i]->ch);
 				new_score.ch = strdup(string__);
